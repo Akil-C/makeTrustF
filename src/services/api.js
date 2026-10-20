@@ -8,7 +8,10 @@ if (API_URL.endsWith('/api')) {
 
 const api = axios.create({
   baseURL: API_URL,
-  headers: { 'Content-Type': 'application/json' },
+  headers: {
+    'Content-Type': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest',
+  },
   timeout: 90000,
 })
 

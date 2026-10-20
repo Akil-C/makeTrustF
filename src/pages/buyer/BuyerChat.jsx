@@ -12,6 +12,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext'
 import chatService from '../../services/chatService'
 import { formatCredits } from '../../utils/formatters'
+import { detectOffPlatformRisk } from '../../utils/sanitize'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import toast from 'react-hot-toast'
@@ -94,19 +95,12 @@ export default function BuyerChat() {
     setInputMessage('')
     setSending(true)
 
-    // Check suspicious content
-    const lower = text.toLowerCase()
-    const isSuspicious =
-      lower.includes('whatsapp') ||
-      lower.includes('upi') ||
-      lower.includes('gpay') ||
-      lower.includes('phonepe') ||
-      lower.includes('bank transfer') ||
-      lower.includes('outside')
-
-    if (isSuspicious) {
-      toast('Reminder: Payments made outside Nexora Escrow cannot be insured or refunded.', {
-        icon: '⚠️',
+    // Security check: intercept off-platform scam cues or external payment schemes
+    const risk = detectOffPlatformRisk(text)
+    if (risk.flagged) {
+      toast('Security Warning: Avoid sharing phone numbers, UPI IDs, or paying outside the escrow vault. Off-platform deals are not protected.', {
+        icon: '🛡️',
+        duration: 5000,
       })
     }
 

@@ -8,6 +8,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext'
 import chatService from '../../services/chatService'
 import { formatCredits } from '../../utils/formatters'
+import { detectOffPlatformRisk } from '../../utils/sanitize'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import toast from 'react-hot-toast'
@@ -84,6 +85,15 @@ export default function SellerChat() {
     const text = inputMessage.trim()
     setInputMessage('')
     setSending(true)
+
+    // Security check: intercept off-platform scam cues or external payment schemes
+    const risk = detectOffPlatformRisk(text)
+    if (risk.flagged) {
+      toast('Security Warning: All merchant transactions must remain within Nexora Escrow. Soliciting off-platform payments can lead to account suspension.', {
+        icon: '🛡️',
+        duration: 5000,
+      })
+    }
 
     try {
       const res = await chatService.sendMessage(activeRoom.id, { content: text, type: 'TEXT' })
