@@ -14,6 +14,7 @@ export default function RegisterPage() {
   const [role, setRole] = useState('BUYER') // 'BUYER' | 'SELLER'
   const [captchaVerified, setCaptchaVerified] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [wakeNotice, setWakeNotice] = useState(false)
   const [error, setError] = useState('')
 
   const { register } = useAuth()
@@ -34,16 +35,23 @@ export default function RegisterPage() {
     }
 
     setLoading(true)
+    setWakeNotice(false)
+    const timer = setTimeout(() => {
+      setWakeNotice(true)
+    }, 4000)
+
     try {
-      await register({ name, email, password, role, captchaToken: 'simulated-turnstile-token' })
+      await register({ name: name.trim(), email: email.trim(), password, role, captchaToken: 'simulated-turnstile-token' })
       toast.success('Registration successful! Welcome to Nexora.')
       if (role === 'SELLER') navigate('/seller/dashboard')
       else navigate('/buyer/dashboard')
     } catch (err) {
-      toast.success(`Account created successfully as ${role}!`)
-      if (role === 'SELLER') navigate('/seller/dashboard')
-      else navigate('/buyer/dashboard')
+      const apiError = err.response?.data?.message || err.message || 'Registration failed. Please check your information.'
+      setError(apiError)
+      toast.error(apiError)
     } finally {
+      clearTimeout(timer)
+      setWakeNotice(false)
       setLoading(false)
     }
   }
@@ -192,6 +200,12 @@ export default function RegisterPage() {
               <span>{loading ? 'CREATING ACCOUNT...' : 'CREATE VERIFIED ACCOUNT'}</span>
               <ArrowUpRight className="w-4 h-4" />
             </button>
+
+            {wakeNotice && (
+              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 p-2.5 rounded text-center animate-pulse">
+                Connecting to cloud server... If the server was idle, it may take 30–45s to wake up on the first request.
+              </p>
+            )}
           </form>
 
         </div>
