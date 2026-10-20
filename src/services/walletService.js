@@ -18,15 +18,25 @@ const walletService = {
 
   /**
    * Admin: manually top up a user's wallet.
-   * @param {{ userId, amount, reason }} data
+   * @param {{ targetUserId, userId, amount, reason }} data
    */
-  adminTopUp: (data) => api.post('/api/admin/wallet/topup', data),
+  adminTopUp: (data) =>
+    api.post('/api/admin/wallet/grant', {
+      targetUserId: data.targetUserId || data.userId,
+      amount: Number(data.amount),
+      reason: data.reason || 'Admin Credit Topup',
+    }),
 
   /**
    * Admin: deduct credits from a user's wallet.
-   * @param {{ userId, amount, reason }} data
+   * @param {{ targetUserId, userId, amount, reason }} data
    */
-  adminDeduct: (data) => api.post('/api/admin/wallet/deduct', data),
+  adminDeduct: (data) =>
+    api.post('/api/admin/wallet/adjust', {
+      targetUserId: data.targetUserId || data.userId,
+      amount: -Math.abs(Number(data.amount)),
+      reason: data.reason || 'Admin Credit Deduction',
+    }),
 }
 
 export default walletService

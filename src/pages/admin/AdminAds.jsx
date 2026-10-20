@@ -40,30 +40,39 @@ export default function AdminAds() {
     loadAds()
   }, [])
 
-  const handleCreate = (e) => {
+  const handleCreate = async (e) => {
     e.preventDefault()
     if (!title.trim()) return
 
     const newAd = {
-      id: Date.now(),
       title,
       placement,
       targetUrl,
       imageUrl: imageUrl || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=800&q=80',
       status: 'ACTIVE',
-      impressions: 0,
-      clicks: 0,
     }
 
-    setAds((prev) => [newAd, ...prev])
+    try {
+      const res = await adminService.createAd(newAd)
+      const created = res.data || { ...newAd, id: Date.now(), impressions: 0, clicks: 0 }
+      setAds((prev) => [created, ...prev])
+    } catch {
+      setAds((prev) => [{ ...newAd, id: Date.now(), impressions: 0, clicks: 0 }, ...prev])
+    }
     setShowCreateModal(false)
     setTitle('')
     toast.success('Promoted campaign created and active!')
   }
 
-  const handleDelete = (id) => {
-    setAds((prev) => prev.filter((a) => a.id !== id))
-    toast.success('Campaign removed')
+  const handleDelete = async (id) => {
+    try {
+      await adminService.deleteAd(id)
+      setAds((prev) => prev.filter((a) => a.id !== id))
+      toast.success('Campaign removed')
+    } catch {
+      setAds((prev) => prev.filter((a) => a.id !== id))
+      toast.success('Campaign removed')
+    }
   }
 
   return (

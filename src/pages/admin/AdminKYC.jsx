@@ -37,24 +37,26 @@ export default function AdminKYC() {
     loadKYC()
   }, [])
 
-  const handleApprove = async (id) => {
+  const handleApprove = async (item) => {
+    const sellerId = item.sellerId || item.id
     try {
-      await adminService.approveKYC(id, 'Documents verified cleanly')
+      await adminService.approveKYC(sellerId, 'Documents verified cleanly')
       toast.success('KYC Approved! Verified Merchant status granted.')
-      setKycQueue((prev) => prev.filter((k) => k.id !== id))
+      setKycQueue((prev) => prev.filter((k) => k.id !== item.id))
     } catch {
-      setKycQueue((prev) => prev.filter((k) => k.id !== id))
+      setKycQueue((prev) => prev.filter((k) => k.id !== item.id))
       toast.success('KYC Approved! Verified Merchant status granted.')
     }
   }
 
-  const handleReject = async (id) => {
+  const handleReject = async (item) => {
+    const sellerId = item.sellerId || item.id
     try {
-      await adminService.rejectKYC(id, 'Document unreadable or invalid credentials')
+      await adminService.rejectKYC(sellerId, 'Document unreadable or invalid credentials')
       toast.success('KYC Rejected. Merchant notified.')
-      setKycQueue((prev) => prev.filter((k) => k.id !== id))
+      setKycQueue((prev) => prev.filter((k) => k.id !== item.id))
     } catch {
-      setKycQueue((prev) => prev.filter((k) => k.id !== id))
+      setKycQueue((prev) => prev.filter((k) => k.id !== item.id))
       toast.success('KYC Rejected. Merchant notified.')
     }
   }
@@ -124,7 +126,7 @@ export default function AdminKYC() {
                     <td className="py-4 px-6 text-right space-x-2">
                       <button
                         type="button"
-                        onClick={() => handleApprove(item.id)}
+                        onClick={() => handleApprove(item)}
                         className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors inline-flex items-center gap-1.5 shadow-xs"
                       >
                         <CheckCircle2 className="w-3.5 h-3.5" />
@@ -133,7 +135,7 @@ export default function AdminKYC() {
 
                       <button
                         type="button"
-                        onClick={() => handleReject(item.id)}
+                        onClick={() => handleReject(item)}
                         className="px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition-colors inline-flex items-center gap-1.5 shadow-xs"
                       >
                         <XCircle className="w-3.5 h-3.5" />

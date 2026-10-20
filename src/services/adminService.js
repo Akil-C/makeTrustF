@@ -39,15 +39,15 @@ const adminService = {
   updateOrderStatus: (id, data) => api.put(`/api/admin/orders/${id}/status`, data),
 
   // ── Reports ───────────────────────────────────────────────────────────────
-  getReports: (params = {}) => api.get('/api/reports', { params }),
-  resolveReport: (id, data) => api.put(`/api/reports/${id}/resolve`, data),
-  rejectReport: (id, notes = '') => api.put(`/api/reports/${id}/reject`, null, { params: { notes } }),
-  dismissReport: (id, notes = '') => api.put(`/api/reports/${id}/reject`, null, { params: { notes } }),
+  getReports: (params = {}) => api.get('/api/admin/reports', { params }),
+  resolveReport: (id, data) => api.put(`/api/admin/reports/${id}/resolve`, data),
+  rejectReport: (id, notes = '') => api.put(`/api/admin/reports/${id}/reject`, null, { params: { notes } }),
+  dismissReport: (id, notes = '') => api.put(`/api/admin/reports/${id}/reject`, null, { params: { notes } }),
 
   // ── Disputes ─────────────────────────────────────────────────────────────
   getDisputes: (params = {}) =>
-    api.get('/api/admin/disputes', { params }).catch(() => api.get('/api/orders', { params: { status: 'DISPUTED' } })),
-  resolveDispute: (id, data) => api.post(`/api/admin/orders/${id}/resolve`, data),
+    api.get('/api/admin/orders', { params: { status: 'DISPUTED', ...params } }),
+  resolveDispute: (id, data) => api.put(`/api/admin/orders/${id}/status`, data),
 
   // ── Ads / Promotions ──────────────────────────────────────────────────────
   getAds: (params = {}) => api.get('/api/admin/ads', { params }),
@@ -57,7 +57,21 @@ const adminService = {
   deleteAd: (id) => api.delete(`/api/admin/ads/${id}`),
 
   // ── Credits & Ledger ───────────────────────────────────────────────────────
-  grantCredits: (data) => api.post('/api/admin/wallet/grant', data),
+  grantCredits: (targetUserIdOrData, amount, reason) => {
+    if (typeof targetUserIdOrData === 'object' && targetUserIdOrData !== null) {
+      const payload = {
+        targetUserId: targetUserIdOrData.targetUserId || targetUserIdOrData.userId,
+        amount: Number(targetUserIdOrData.amount),
+        reason: targetUserIdOrData.reason || 'Admin Credit Grant',
+      }
+      return api.post('/api/admin/wallet/grant', payload)
+    }
+    return api.post('/api/admin/wallet/grant', {
+      targetUserId: targetUserIdOrData,
+      amount: Number(amount),
+      reason: reason || 'Admin Credit Grant',
+    })
+  },
   adjustCredits: (data) => api.post('/api/admin/wallet/adjust', data),
   freezeWallet: (userId, reason = 'Administrative hold') =>
     api.post(`/api/admin/wallet/${userId}/freeze`, null, { params: { reason } }),

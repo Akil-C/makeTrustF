@@ -10,6 +10,7 @@ import {
   MapPin,
   ShieldCheck,
   RotateCcw,
+  Compass,
 } from 'lucide-react'
 import productService from '../../services/productService'
 import wishlistService from '../../services/wishlistService'
@@ -33,6 +34,30 @@ const PRODUCT_CATEGORIES = [
   'Collectibles',
 ]
 
+const CATEGORY_MAP = {
+  Electronics: 1,
+  Vehicles: 2,
+  Furniture: 3,
+  Fashion: 4,
+  Books: 5,
+  Sports: 6,
+  'Home Appliances': 7,
+  'Musical Instruments': 8,
+  Collectibles: 9,
+  'Real Estate': 10,
+}
+
+const CITY_OPTIONS = [
+  'All Metros',
+  'Bengaluru',
+  'Mumbai',
+  'Delhi',
+  'Hyderabad',
+  'Chennai',
+  'Pune',
+  'San Francisco',
+]
+
 const PRODUCT_CONDITIONS = [
   { value: 'NEW', label: 'Brand New' },
   { value: 'LIKE_NEW', label: 'Like New (Mint)' },
@@ -46,6 +71,7 @@ export default function SearchPage() {
   const qParam = searchParams.get('q') || searchParams.get('keyword') || ''
   const catParam = searchParams.get('category') || ''
   const condParam = searchParams.get('condition') || ''
+  const cityParam = searchParams.get('city') || ''
   const minParam = searchParams.get('minPrice') || ''
   const maxParam = searchParams.get('maxPrice') || ''
   const sortParam = searchParams.get('sortBy') || 'newest'
@@ -54,6 +80,7 @@ export default function SearchPage() {
   const [q, setQ] = useState(qParam)
   const [category, setCategory] = useState(catParam)
   const [condition, setCondition] = useState(condParam)
+  const [city, setCity] = useState(cityParam)
   const [minPrice, setMinPrice] = useState(minParam)
   const [maxPrice, setMaxPrice] = useState(maxParam)
   const [sortBy, setSortBy] = useState(sortParam)
@@ -69,18 +96,22 @@ export default function SearchPage() {
     setQ(qParam)
     setCategory(catParam)
     setCondition(condParam)
+    setCity(cityParam)
     setMinPrice(minParam)
     setMaxPrice(maxParam)
     setSortBy(sortParam)
-  }, [qParam, catParam, condParam, minParam, maxParam, sortParam])
+  }, [qParam, catParam, condParam, cityParam, minParam, maxParam, sortParam])
 
   useEffect(() => {
     async function loadData() {
       setLoading(true)
       try {
+        const catId = CATEGORY_MAP[catParam] || (catParam && !isNaN(catParam) ? Number(catParam) : undefined)
         const params = {
           keyword: qParam || undefined,
+          categoryId: catId,
           condition: condParam || undefined,
+          city: cityParam && cityParam !== 'All Metros' ? cityParam : undefined,
           minPrice: minParam ? parseInt(minParam, 10) : undefined,
           maxPrice: maxParam ? parseInt(maxParam, 10) : undefined,
           sortBy: sortParam,
@@ -89,10 +120,39 @@ export default function SearchPage() {
         }
 
         const res = await productService.searchProducts(params)
-        const list = res.data?.content || res.data || []
+        let list = res.data?.content || res.data || []
+
+        // If backend search yielded 0 items, check if general catalog lookup + client match gives results
+        if (list.length === 0 && (qParam || catParam || cityParam)) {
+          try {
+            const fallbackRes = await productService.getRecentProducts(50)
+            const allItems = fallbackRes.data?.content || fallbackRes.data || []
+            list = allItems.filter((item) => {
+              const matchQ =
+                !qParam ||
+                item.title?.toLowerCase().includes(qParam.toLowerCase()) ||
+                item.description?.toLowerCase().includes(qParam.toLowerCase()) ||
+                item.brand?.toLowerCase().includes(qParam.toLowerCase())
+              const matchCat =
+                !catParam ||
+                item.categoryName?.toLowerCase() === catParam.toLowerCase() ||
+                item.category?.toLowerCase() === catParam.toLowerCase() ||
+                (catId && item.categoryId === catId)
+              const matchCity =
+                !cityParam ||
+                cityParam === 'All Metros' ||
+                item.city?.toLowerCase() === cityParam.toLowerCase()
+              const matchCond = !condParam || item.condition === condParam
+              return matchQ && matchCat && matchCity && matchCond
+            })
+          } catch {
+            // Keep empty list
+          }
+        }
+
         setProducts(list)
         setTotalItems(res.data?.totalElements || list.length)
-        setTotalPages(res.data?.totalPages || 1)
+        setTotalPages(res.data?.totalPages || Math.ceil(list.length / 12) || 1)
       } catch {
         setProducts([])
         setTotalItems(0)
@@ -102,13 +162,14 @@ export default function SearchPage() {
     }
 
     loadData()
-  }, [qParam, catParam, condParam, minParam, maxParam, sortParam, pageParam])
+  }, [qParam, catParam, condParam, cityParam, minParam, maxParam, sortParam, pageParam])
 
   const applyFilters = (overrides = {}) => {
     const next = {
       q: overrides.q !== undefined ? overrides.q : q,
       category: overrides.category !== undefined ? overrides.category : category,
       condition: overrides.condition !== undefined ? overrides.condition : condition,
+      city: overrides.city !== undefined ? overrides.city : city,
       minPrice: overrides.minPrice !== undefined ? overrides.minPrice : minPrice,
       maxPrice: overrides.maxPrice !== undefined ? overrides.maxPrice : maxPrice,
       sortBy: overrides.sortBy !== undefined ? overrides.sortBy : sortBy,
@@ -117,7 +178,7 @@ export default function SearchPage() {
 
     const clean = {}
     Object.keys(next).forEach((k) => {
-      if (next[k] !== '' && next[k] !== undefined && next[k] !== null) {
+      if (next[k] !== '' && next[k] !== undefined && next[k] !== null && next[k] !== 'All Metros') {
         clean[k] = next[k]
       }
     })
@@ -128,6 +189,7 @@ export default function SearchPage() {
     setQ('')
     setCategory('')
     setCondition('')
+    setCity('')
     setMinPrice('')
     setMaxPrice('')
     setSortBy('newest')
@@ -248,6 +310,20 @@ export default function SearchPage() {
               </select>
             </div>
 
+            {/* City Hub Filter */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Metro Hub</label>
+              <select
+                value={city}
+                onChange={(e) => applyFilters({ city: e.target.value })}
+                className="w-full bg-slate-50 border border-slate-300 rounded-lg text-xs p-2.5 text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
+              >
+                {CITY_OPTIONS.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+
             {/* Price Range */}
             <div className="space-y-1.5">
               <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Price Range (MC)</label>
@@ -294,6 +370,15 @@ export default function SearchPage() {
                     <option value="price_desc">Price: High to Low</option>
                   </select>
                 </div>
+
+                <Link
+                  to="/map-search"
+                  className="px-3 py-1.5 rounded-lg border border-slate-300 hover:border-slate-800 bg-white text-slate-800 font-semibold text-xs transition-all shadow-xs flex items-center gap-1.5"
+                  title="Explore listings on interactive radar map"
+                >
+                  <Compass className="w-3.5 h-3.5 text-rose-600" />
+                  <span className="hidden sm:inline">Radar Map</span>
+                </Link>
 
                 <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
                   <button
