@@ -801,10 +801,12 @@ export const CURATED_PRODUCTS = [
     brand: 'Roland',
     city: 'Bengaluru',
     state: 'Karnataka',
-    primaryImageUrl: 'https://images.unsplash.com/photo-1520523839898-507127054976?w=800&auto=format&fit=crop&q=80',
+    primaryImageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Roland_FP-90X_at_Roland_Taiwan_Enterprise_booth_20221224.jpg/1280px-Roland_FP-90X_at_Roland_Taiwan_Enterprise_booth_20221224.jpg',
     images: [
-      'https://images.unsplash.com/photo-1520523839898-507127054976?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&auto=format&fit=crop&q=80',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Roland_FP-90X_at_Roland_Taiwan_Enterprise_booth_20221224.jpg/1280px-Roland_FP-90X_at_Roland_Taiwan_Enterprise_booth_20221224.jpg',
+      'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1552422535-c45813c61732?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1513883049090-d0b7439799bf?w=800&auto=format&fit=crop&q=80',
     ],
     seller: {
       id: 2,
@@ -1090,7 +1092,7 @@ export function getProductImage(product) {
     return 'https://images.unsplash.com/photo-1594385208974-2e75f8d7bb48?w=800&auto=format&fit=crop&q=80'
   }
   if (title.includes('piano') || title.includes('keyboard') || title.includes('roland')) {
-    return 'https://images.unsplash.com/photo-1520523839898-507127054976?w=800&auto=format&fit=crop&q=80'
+    return 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Roland_FP-90X_at_Roland_Taiwan_Enterprise_booth_20221224.jpg/1280px-Roland_FP-90X_at_Roland_Taiwan_Enterprise_booth_20221224.jpg'
   }
   if (title.includes('guitar') || title.includes('pacifica') || title.includes('stratocaster')) {
     return 'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=800&auto=format&fit=crop&q=80'
@@ -1146,7 +1148,7 @@ export function getProductImage(product) {
     return 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800&auto=format&fit=crop&q=80'
   }
   if (cat.includes('music') || cat.includes('instrument')) {
-    return 'https://images.unsplash.com/photo-1520523839898-507127054976?w=800&auto=format&fit=crop&q=80'
+    return 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&auto=format&fit=crop&q=80'
   }
   if (cat.includes('collect')) {
     return 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800&auto=format&fit=crop&q=80'
