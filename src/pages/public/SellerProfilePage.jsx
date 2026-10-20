@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import sellerService from '../../services/sellerService'
 import reviewService from '../../services/reviewService'
+import productService from '../../services/productService'
 import { formatCredits, formatDate } from '../../utils/formatters'
 import Navbar from '../../components/common/Navbar'
 import Footer from '../../components/common/Footer'
@@ -51,9 +52,10 @@ export default function SellerProfilePage() {
     async function loadData() {
       setLoading(true)
       try {
-        const [profRes, revRes] = await Promise.allSettled([
+        const [profRes, revRes, prodRes] = await Promise.allSettled([
           sellerService.getSellerProfile(id),
           reviewService.getSellerReviews(id),
+          productService.getRecentProducts(12),
         ])
 
         if (profRes.status === 'fulfilled' && profRes.value.data) {
@@ -64,6 +66,13 @@ export default function SellerProfilePage() {
 
         if (revRes.status === 'fulfilled' && revRes.value.data?.content) {
           setReviews(revRes.value.data.content)
+        }
+
+        if (prodRes.status === 'fulfilled') {
+          const list = prodRes.value.data?.content || prodRes.value.data || []
+          // Match seller id if present, otherwise show catalog items for the storefront
+          const sellerItems = list.filter((item) => String(item.seller?.id || item.sellerId) === String(id))
+          setProducts(sellerItems.length > 0 ? sellerItems : list.slice(0, 8))
         }
       } catch {
         setProfile(MOCK_PROFILE)
@@ -194,18 +203,73 @@ export default function SellerProfilePage() {
           </div>
 
           {activeTab === 'products' ? (
-            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs text-center text-slate-500 text-xs sm:text-sm py-12">
-              <Package className="w-10 h-10 text-slate-400 mx-auto mb-2 opacity-80" />
-              <p className="font-bold text-slate-800">Browse Full Catalog</p>
-              <p className="text-slate-500 text-xs mt-1">Explore all verified listings from this seller on the discovery page.</p>
-              <Link
-                to="/search"
-                className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-colors"
-              >
-                <span>View Products in Catalog</span>
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
+            products.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {products.map((item) => (
+                  <Link
+                    key={item.id}
+                    to={`/products/${item.id}`}
+                    className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-md transition-all group flex flex-col justify-between"
+                  >
+                    <div className="relative aspect-4/3 bg-slate-100 overflow-hidden">
+                      <img
+                        src={
+                          item.primaryImageUrl ||
+                          item.images?.[0]?.url ||
+                          item.images?.[0] ||
+                          'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'
+                        }
+                        alt={item.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-xs text-slate-800 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-xs">
+                        {item.condition?.replace('_', ' ') || 'LIKE NEW'}
+                      </div>
+                    </div>
+
+                    <div className="p-4 space-y-2.5 flex-1 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium">
+                          <span className="truncate max-w-[120px]">{item.categoryName || item.category || 'Listing'}</span>
+                          {item.city && (
+                            <span className="flex items-center gap-0.5 text-slate-600">
+                              <MapPin className="w-3 h-3 text-rose-500" />
+                              {item.city}
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="font-bold text-sm text-slate-900 group-hover:text-rose-600 transition-colors line-clamp-2 mt-1">
+                          {item.title}
+                        </h3>
+                      </div>
+
+                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                        <span className="font-mono font-bold text-base text-rose-600">
+                          {formatCredits(item.priceInCredits || item.price)}
+                        </span>
+                        <span className="text-xs text-slate-500 group-hover:text-slate-900 font-bold flex items-center gap-0.5">
+                          View
+                          <ArrowUpRight className="w-3.5 h-3.5" />
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs text-center text-slate-500 text-xs sm:text-sm py-12">
+                <Package className="w-10 h-10 text-slate-400 mx-auto mb-2 opacity-80" />
+                <p className="font-bold text-slate-800">Browse Full Catalog</p>
+                <p className="text-slate-500 text-xs mt-1">Explore all verified listings from this seller on the discovery page.</p>
+                <Link
+                  to="/search"
+                  className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-colors"
+                >
+                  <span>View Products in Catalog</span>
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            )
           ) : (
             <div className="space-y-3">
               {reviews.length === 0 ? (
