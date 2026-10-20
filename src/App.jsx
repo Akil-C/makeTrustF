@@ -1,6 +1,7 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
+import { prewarmServer } from './services/api'
 import ProtectedRoute from './components/common/ProtectedRoute'
 import LoadingSpinner from './components/common/LoadingSpinner'
 
@@ -54,6 +55,11 @@ const PageLoader = () => (
 )
 
 export default function App() {
+  useEffect(() => {
+    // Proactively prewarm backend cloud instance upon initial site load
+    prewarmServer()
+  }, [])
+
   return (
     <AuthProvider>
       <Suspense fallback={<PageLoader />}>

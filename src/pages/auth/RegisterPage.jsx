@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Lock, Mail, User, ShieldCheck, Check, AlertCircle, ArrowUpRight } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
+import { prewarmServer } from '../../services/api'
 import Navbar from '../../components/common/Navbar'
 import Footer from '../../components/common/Footer'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
@@ -15,10 +16,24 @@ export default function RegisterPage() {
   const [captchaVerified, setCaptchaVerified] = useState(false)
   const [loading, setLoading] = useState(false)
   const [wakeNotice, setWakeNotice] = useState(false)
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [error, setError] = useState('')
+
+  const noticeTimerRef = useRef(null)
+  const elapsedIntervalRef = useRef(null)
 
   const { register } = useAuth()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    // Warm up backend cloud instance immediately when user arrives on register page
+    prewarmServer()
+
+    return () => {
+      if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current)
+      if (elapsedIntervalRef.current) clearInterval(elapsedIntervalRef.current)
+    }
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -36,9 +51,15 @@ export default function RegisterPage() {
 
     setLoading(true)
     setWakeNotice(false)
-    const timer = setTimeout(() => {
+    setElapsedSeconds(0)
+
+    const startTime = Date.now()
+    noticeTimerRef.current = setTimeout(() => {
       setWakeNotice(true)
-    }, 4000)
+      elapsedIntervalRef.current = setInterval(() => {
+        setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000))
+      }, 1000)
+    }, 2000)
 
     try {
       await register({ name: name.trim(), email: email.trim(), password, role, captchaToken: 'simulated-turnstile-token' })
@@ -50,7 +71,8 @@ export default function RegisterPage() {
       setError(apiError)
       toast.error(apiError)
     } finally {
-      clearTimeout(timer)
+      if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current)
+      if (elapsedIntervalRef.current) clearInterval(elapsedIntervalRef.current)
       setWakeNotice(false)
       setLoading(false)
     }
@@ -97,6 +119,7 @@ export default function RegisterPage() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  onFocus={() => prewarmServer()}
                   placeholder="John Doe"
                   required
                   className="w-full pl-10 pr-4 py-3 bg-white border border-slate-300 rounded-lg focus:border-rose-500 focus:ring-1 focus:ring-rose-500 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all shadow-xs"
@@ -114,6 +137,7 @@ export default function RegisterPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  onFocus={() => prewarmServer()}
                   placeholder="name@domain.com"
                   required
                   className="w-full pl-10 pr-4 py-3 bg-white border border-slate-300 rounded-lg focus:border-rose-500 focus:ring-1 focus:ring-rose-500 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all shadow-xs"
@@ -131,6 +155,7 @@ export default function RegisterPage() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onFocus={() => prewarmServer()}
                   placeholder="At least 8 characters"
                   required
                   minLength={8}
@@ -202,9 +227,29 @@ export default function RegisterPage() {
             </button>
 
             {wakeNotice && (
-              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 p-2.5 rounded text-center animate-pulse">
-                Connecting to cloud server... If the server was idle, it may take 30–45s to wake up on the first request.
-              </p>
+              <div className="p-3.5 bg-amber-50/90 border border-amber-200/80 rounded-xl text-amber-950 text-xs space-y-2 shadow-xs transition-all">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 font-bold text-amber-900">
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-600"></span>
+                    </span>
+                    Connecting to cloud server...
+                  </span>
+                  <span className="font-mono text-amber-800 bg-amber-200/70 px-2 py-0.5 rounded text-[11px] font-semibold">
+                    {elapsedSeconds}s
+                  </span>
+                </div>
+                <p className="text-[11px] text-amber-800 leading-relaxed font-normal">
+                  Waking up secure cloud instance (typically ready in <span className="font-semibold text-amber-950">10–15 seconds</span>).
+                </p>
+                <div className="w-full bg-amber-200/50 rounded-full h-1.5 overflow-hidden">
+                  <div
+                    className="bg-amber-600 h-1.5 rounded-full transition-all duration-300"
+                    style={{ width: `${Math.min(100, Math.max(15, (elapsedSeconds / 15) * 100))}%` }}
+                  />
+                </div>
+              </div>
             )}
           </form>
 

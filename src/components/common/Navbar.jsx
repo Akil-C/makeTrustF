@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { formatCredits } from '../../utils/formatters'
 import notificationService from '../../services/notificationService'
+import { prewarmServer } from '../../services/api'
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -378,12 +379,16 @@ export default function Navbar() {
             <div className="flex items-center gap-2">
               <Link
                 to="/login"
+                onMouseEnter={() => prewarmServer()}
+                onTouchStart={() => prewarmServer()}
                 className="text-xs font-semibold text-slate-700 hover:text-slate-950 px-3 py-1.5 rounded-lg hover:bg-slate-200/50 transition-colors"
               >
                 Sign In
               </Link>
               <Link
                 to="/register"
+                onMouseEnter={() => prewarmServer()}
+                onTouchStart={() => prewarmServer()}
                 className="text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white px-3.5 py-1.5 rounded-lg transition-colors shadow-xs"
               >
                 Create Account
@@ -569,6 +574,8 @@ export default function Navbar() {
               <div className="grid grid-cols-2 gap-3">
                 <Link
                   to="/login"
+                  onMouseEnter={() => prewarmServer()}
+                  onTouchStart={() => prewarmServer()}
                   onClick={() => setMobileMenuOpen(false)}
                   className="border border-slate-300 text-slate-800 hover:bg-slate-200/50 font-semibold text-center py-3 rounded-lg block text-sm shadow-xs"
                 >
@@ -576,6 +583,8 @@ export default function Navbar() {
                 </Link>
                 <Link
                   to="/register"
+                  onMouseEnter={() => prewarmServer()}
+                  onTouchStart={() => prewarmServer()}
                   onClick={() => setMobileMenuOpen(false)}
                   className="bg-rose-600 hover:bg-rose-700 text-white font-semibold text-center py-3 rounded-lg block text-sm shadow-xs"
                 >

@@ -31,6 +31,85 @@ api.interceptors.request.use(
 let isRefreshing = false
 let failedQueue  = []
 
+// ── Cloud Pre-warming & Keep-Alive State ──────────────────────────────────────
+let isServerWarm = false
+let lastWarmedAt = 0
+let prewarmPromise = null
+
+export function markBackendWarm() {
+  isServerWarm = true
+  lastWarmedAt = Date.now()
+}
+
+export function isBackendWarm() {
+  // Free-tier cloud instances sleep after ~15 mins of idle. Consider warm if < 8 mins.
+  return isServerWarm && (Date.now() - lastWarmedAt < 8 * 60 * 1000)
+}
+
+/**
+ * Proactively pings the backend /health probe to wake up the cloud container
+ * before the user submits actions (reducing perceived wait from 30s to <10-15s or 0s).
+ */
+export async function prewarmServer() {
+  const now = Date.now()
+  if (isServerWarm && now - lastWarmedAt < 8 * 60 * 1000) {
+    return true
+  }
+
+  if (prewarmPromise) {
+    return prewarmPromise
+  }
+
+  prewarmPromise = (async () => {
+    try {
+      const res = await axios.get(`${API_URL}/api/health`, {
+        timeout: 25000,
+        headers: { 'Cache-Control': 'no-cache' },
+      }).catch(async () => {
+        return await axios.get(`${API_URL}/health`, {
+          timeout: 25000,
+          headers: { 'Cache-Control': 'no-cache' },
+        })
+      })
+
+      if (res && (res.status === 200 || res.status === 204)) {
+        markBackendWarm()
+        return true
+      }
+    } catch {
+      // Silently catch - prewarming is non-blocking background acceleration
+    } finally {
+      prewarmPromise = null
+    }
+    return false
+  })()
+
+  return prewarmPromise
+}
+
+// ── Background Keep-Alive Heartbeat ──────────────────────────────────────────
+// Periodically pings /api/health every 9 minutes while the browser tab is open
+// so active users never experience idle cold-starts.
+if (typeof window !== 'undefined') {
+  const HEARTBEAT_INTERVAL = 9 * 60 * 1000 // 9 minutes
+
+  setInterval(() => {
+    if (document.visibilityState !== 'hidden') {
+      prewarmServer()
+    }
+  }, HEARTBEAT_INTERVAL)
+
+  // Wake up immediately when user focuses back on the tab after being away
+  window.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      const now = Date.now()
+      if (now - lastWarmedAt > 8 * 60 * 1000) {
+        prewarmServer()
+      }
+    }
+  })
+}
+
 function processQueue(error, token = null) {
   failedQueue.forEach((prom) => {
     if (error) {
@@ -43,7 +122,10 @@ function processQueue(error, token = null) {
 }
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    markBackendWarm()
+    return response
+  },
   async (error) => {
     const originalRequest = error.config
 
