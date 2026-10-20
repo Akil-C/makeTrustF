@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Heart, ShoppingBag, Trash2, TrendingDown, ArrowRight, ShieldCheck } from 'lucide-react'
 import wishlistService from '../../services/wishlistService'
 import { formatCredits } from '../../utils/formatters'
+import { getProductImage } from '../../utils/productsData'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
 import EmptyState from '../../components/common/EmptyState'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
@@ -89,7 +90,7 @@ export default function BuyerWishlist() {
               const productId = p.id || item.productId
               const title = p.title || 'Marketplace Product'
               const price = p.priceInCredits ?? p.price ?? 0
-              const image = p.primaryImageUrl || p.image || p.images?.[0]?.url || p.images?.[0] || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=800&q=80'
+              const image = getProductImage(p)
               const condition = p.condition || 'GOOD'
               const sellerName = p.seller?.displayName || p.sellerName || 'Verified Seller'
 
@@ -104,6 +105,10 @@ export default function BuyerWishlist() {
                       src={image}
                       alt={title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        e.target.onerror = null
+                        e.target.src = getProductImage(p)
+                      }}
                     />
                     <div className="absolute top-3 left-3 flex items-center gap-1.5">
                       <span className="px-2.5 py-1 rounded-full bg-slate-900/80 backdrop-blur-md text-white text-[11px] font-bold uppercase tracking-wider">

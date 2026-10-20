@@ -16,6 +16,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import productService from '../../services/productService'
 import orderService from '../../services/orderService'
 import { formatCredits } from '../../utils/formatters'
+import { getProductImage, getProductById } from '../../utils/productsData'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import toast from 'react-hot-toast'
@@ -57,10 +58,10 @@ export default function CheckoutPage() {
         if (res.data) {
           setProduct(res.data)
         } else {
-          setProduct(MOCK_CHECKOUT_PRODUCT)
+          setProduct(getProductById(productId) || MOCK_CHECKOUT_PRODUCT)
         }
       } catch {
-        setProduct(MOCK_CHECKOUT_PRODUCT)
+        setProduct(getProductById(productId) || MOCK_CHECKOUT_PRODUCT)
       } finally {
         setLoading(false)
       }
@@ -123,7 +124,7 @@ export default function CheckoutPage() {
     }
   }
 
-  const productImage = p.primaryImageUrl || p.images?.[0]?.url || p.images?.[0] || MOCK_CHECKOUT_PRODUCT.primaryImageUrl
+  const productImage = getProductImage(p)
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-16 font-sans">
@@ -166,6 +167,10 @@ export default function CheckoutPage() {
                 src={productImage}
                 alt={p.title}
                 className="w-24 h-24 rounded-xl object-cover bg-slate-100 border border-slate-200 shrink-0"
+                onError={(e) => {
+                  e.target.onerror = null
+                  e.target.src = getProductImage(p)
+                }}
               />
               <div className="min-w-0 flex-1">
                 <span className="inline-block px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[11px] font-bold uppercase tracking-wider mb-1">

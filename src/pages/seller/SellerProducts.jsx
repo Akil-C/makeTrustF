@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import productService from '../../services/productService'
 import { formatCredits, formatDate } from '../../utils/formatters'
+import { getProductImage } from '../../utils/productsData'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import toast from 'react-hot-toast'
@@ -177,9 +178,13 @@ export default function SellerProducts() {
                   <tr key={item.id} className="hover:bg-slate-50/70 transition-colors">
                     <td className="py-4 px-6 flex items-center gap-4">
                       <img
-                        src={item.primaryImageUrl || item.image || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=200'}
+                        src={getProductImage(item)}
                         alt=""
                         className="w-12 h-12 rounded-xl object-cover bg-slate-100 border border-slate-200 shrink-0"
+                        onError={(e) => {
+                          e.target.onerror = null
+                          e.target.src = getProductImage(item)
+                        }}
                       />
                       <div>
                         <Link

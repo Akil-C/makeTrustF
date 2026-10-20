@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import productService from '../../services/productService'
 import { formatCredits } from '../../utils/formatters'
+import { getProductImage, CURATED_PRODUCTS } from '../../utils/productsData'
 import Navbar from '../../components/common/Navbar'
 import Footer from '../../components/common/Footer'
 import SellerLevelBadge from '../../components/common/SellerLevelBadge'
@@ -44,12 +45,20 @@ export default function MapSearchPage() {
 
       // If nearby query yields 0 for unseeded city, fall back to active catalog
       if (list.length === 0) {
-        const catalogRes = await productService.searchProducts({ size: 15 })
-        list = catalogRes.data?.content || []
+        try {
+          const catalogRes = await productService.searchProducts({ size: 15 })
+          list = catalogRes.data?.content || []
+        } catch {
+          list = CURATED_PRODUCTS.slice(0, 15)
+        }
+      }
+      if (list.length === 0) {
+        list = CURATED_PRODUCTS.slice(0, 15)
       }
 
       const formatted = list.map((p, idx) => ({
         ...p,
+        primaryImageUrl: getProductImage(p),
         x: 20 + ((idx * 27) % 60),
         y: 25 + ((idx * 19) % 55),
         distanceKm: p.distance ? Number(p.distance).toFixed(1) : (1.2 + (idx * 0.8)).toFixed(1),
@@ -212,9 +221,13 @@ export default function MapSearchPage() {
 
               <div className="aspect-4/3 bg-slate-100 rounded-xl overflow-hidden border border-slate-200">
                 <img
-                  src={selectedProduct.primaryImageUrl || selectedProduct.images?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop'}
+                  src={getProductImage(selectedProduct)}
                   alt={selectedProduct.title}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.onerror = null
+                    e.target.src = getProductImage(selectedProduct)
+                  }}
                 />
               </div>
 

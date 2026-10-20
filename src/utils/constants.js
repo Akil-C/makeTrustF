@@ -44,20 +44,15 @@ export const PRODUCT_CONDITIONS = [
 // ── Product categories ────────────────────────────────────────────────────────
 export const PRODUCT_CATEGORIES = [
   'Electronics',
-  'Clothing & Apparel',
-  'Home & Garden',
-  'Sports & Outdoors',
-  'Toys & Games',
-  'Books & Media',
-  'Vehicles & Parts',
-  'Tools & Equipment',
+  'Vehicles',
   'Furniture',
-  'Food & Beverage',
-  'Health & Beauty',
-  'Collectibles & Art',
-  'Baby & Kids',
-  'Pet Supplies',
-  'Other',
+  'Fashion',
+  'Books',
+  'Sports',
+  'Home Appliances',
+  'Musical Instruments',
+  'Collectibles',
+  'Real Estate',
 ]
 
 // ── Seller levels ─────────────────────────────────────────────────────────────

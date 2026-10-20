@@ -31,6 +31,7 @@ import SellerLevelBadge from '../../components/common/SellerLevelBadge'
 import StarRating from '../../components/common/StarRating'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
+import { getProductById, getProductImage, CURATED_PRODUCTS } from '../../utils/productsData'
 import toast from 'react-hot-toast'
 
 const MOCK_PRODUCT = {
@@ -87,12 +88,22 @@ export default function ProductDetailPage() {
       try {
         const res = await productService.getProductById(id)
         if (res.data) {
-          setProduct(res.data)
+          const apiProduct = res.data
+          const resolvedImg = getProductImage(apiProduct)
+          const curatedFallback = getProductById(id)
+          setProduct({
+            ...apiProduct,
+            primaryImageUrl: resolvedImg,
+            images: apiProduct.images?.length
+              ? apiProduct.images.map((im) => (typeof im === 'string' ? im : im.url || resolvedImg))
+              : (curatedFallback?.images || [resolvedImg]),
+            description: apiProduct.description || curatedFallback?.description || '',
+          })
         } else {
-          setProduct(MOCK_PRODUCT)
+          setProduct(getProductById(id) || MOCK_PRODUCT)
         }
       } catch {
-        setProduct(MOCK_PRODUCT)
+        setProduct(getProductById(id) || MOCK_PRODUCT)
       } finally {
         setLoading(false)
       }
@@ -112,16 +123,32 @@ export default function ProductDetailPage() {
       // 2. Fetch Similar Products
       try {
         const simRes = await productService.getSimilarProducts(id)
+        let list = []
         if (Array.isArray(simRes.data) && simRes.data.length > 0) {
-          setSimilarProducts(simRes.data.slice(0, 4))
+          list = simRes.data
         } else {
-          // Fallback to trending products
-          const trendRes = await productService.getTrendingProducts(4)
-          const list = trendRes.data?.content || trendRes.data || []
-          setSimilarProducts(list.filter((p) => String(p.id) !== String(id)).slice(0, 4))
+          const trendRes = await productService.getTrendingProducts(8)
+          list = trendRes.data?.content || trendRes.data || []
         }
+        
+        let filtered = list.filter((p) => String(p.id) !== String(id))
+        if (filtered.length < 4) {
+          // Augment with category-matching curated products
+          const currentCurated = getProductById(id)
+          const cat = currentCurated?.categoryName || product?.categoryName || product?.category || 'Electronics'
+          const catMatches = CURATED_PRODUCTS.filter(
+            (p) => String(p.id) !== String(id) && (p.categoryName === cat || p.categoryId === currentCurated?.categoryId)
+          )
+          filtered = [...filtered, ...catMatches]
+        }
+        
+        setSimilarProducts(filtered.slice(0, 4).map((p) => ({
+          ...p,
+          primaryImageUrl: getProductImage(p),
+        })))
       } catch {
-        // Fallback
+        const catMatches = CURATED_PRODUCTS.filter((p) => String(p.id) !== String(id)).slice(0, 4)
+        setSimilarProducts(catMatches.map((p) => ({ ...p, primaryImageUrl: getProductImage(p) })))
       }
 
       // 3. Fetch Product Reviews
@@ -228,9 +255,10 @@ export default function ProductDetailPage() {
     )
   }
 
+  const fallbackImage = getProductImage(product)
   const images = product.images?.length
-    ? product.images.map((img) => (typeof img === 'string' ? img : img.url))
-    : [product.primaryImageUrl || 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800']
+    ? product.images.map((img) => (typeof img === 'string' ? img : img.url || fallbackImage))
+    : [product.primaryImageUrl || fallbackImage]
 
   return (
     <div className="min-h-screen bg-[#F7F7F4] text-slate-900 flex flex-col justify-between font-sans">
@@ -254,9 +282,13 @@ export default function ProductDetailPage() {
           <div className="space-y-4">
             <div className="relative aspect-square bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs group">
               <img
-                src={images[activeImageIdx] || images[0]}
+                src={images[activeImageIdx] || fallbackImage}
                 alt={product.title}
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.onerror = null
+                  e.target.src = fallbackImage
+                }}
               />
               <button
                 onClick={handleShare}
@@ -587,14 +619,13 @@ export default function ProductDetailPage() {
                 >
                   <div className="relative aspect-4/3 bg-slate-100 overflow-hidden">
                     <img
-                      src={
-                        item.primaryImageUrl ||
-                        item.images?.[0]?.url ||
-                        item.images?.[0] ||
-                        'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'
-                      }
+                      src={getProductImage(item)}
                       alt={item.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        e.target.onerror = null
+                        e.target.src = getProductImage(item)
+                      }}
                     />
                     <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-xs text-slate-800 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-xs">
                       {item.condition?.replace('_', ' ') || 'LIKE NEW'}

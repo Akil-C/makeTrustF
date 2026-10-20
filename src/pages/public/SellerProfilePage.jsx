@@ -18,6 +18,7 @@ import sellerService from '../../services/sellerService'
 import reviewService from '../../services/reviewService'
 import productService from '../../services/productService'
 import { formatCredits, formatDate } from '../../utils/formatters'
+import { getProductImage } from '../../utils/productsData'
 import Navbar from '../../components/common/Navbar'
 import Footer from '../../components/common/Footer'
 import SellerLevelBadge from '../../components/common/SellerLevelBadge'
@@ -213,14 +214,13 @@ export default function SellerProfilePage() {
                   >
                     <div className="relative aspect-4/3 bg-slate-100 overflow-hidden">
                       <img
-                        src={
-                          item.primaryImageUrl ||
-                          item.images?.[0]?.url ||
-                          item.images?.[0] ||
-                          'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'
-                        }
+                        src={getProductImage(item)}
                         alt={item.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        onError={(e) => {
+                          e.target.onerror = null
+                          e.target.src = getProductImage(item)
+                        }}
                       />
                       <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-xs text-slate-800 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-xs">
                         {item.condition?.replace('_', ' ') || 'LIKE NEW'}

@@ -33,55 +33,11 @@ import VerifiedBadge from '../../components/common/VerifiedBadge'
 import SellerLevelBadge from '../../components/common/SellerLevelBadge'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
+import { CURATED_PRODUCTS, getProductImage } from '../../utils/productsData'
 import toast from 'react-hot-toast'
 
-// Sample fallback items for rich presentation when backend is starting empty
-const MOCK_FEATURED = [
-  {
-    id: 1,
-    title: 'iPhone 15 Pro Max 256GB — Natural Titanium',
-    priceInCredits: 950,
-    category: 'Electronics',
-    condition: 'LIKE_NEW',
-    primaryImageUrl: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&auto=format&fit=crop',
-    city: 'Downtown',
-    distance: 1.2,
-    seller: { id: 101, displayName: 'TechHub Deals', sellerLevel: 'PLATINUM', trustScore: 99, averageRating: 4.9, reviewCount: 142, isVerified: true },
-  },
-  {
-    id: 2,
-    title: 'Sony WH-1000XM5 Wireless Headphones — Silver',
-    priceInCredits: 280,
-    category: 'Electronics',
-    condition: 'NEW',
-    primaryImageUrl: 'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=800&auto=format&fit=crop',
-    city: 'North Side',
-    distance: 3.5,
-    seller: { id: 102, displayName: 'AudioFile Studio', sellerLevel: 'GOLD', trustScore: 96, averageRating: 4.8, reviewCount: 88, isVerified: true },
-  },
-  {
-    id: 3,
-    title: 'MacBook Air M2 16GB / 512GB Space Gray',
-    priceInCredits: 1100,
-    category: 'Electronics',
-    condition: 'LIKE_NEW',
-    primaryImageUrl: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&auto=format&fit=crop',
-    city: 'West End',
-    distance: 2.1,
-    seller: { id: 103, displayName: 'Sarah Miller', sellerLevel: 'GOLD', trustScore: 98, averageRating: 4.95, reviewCount: 64, isVerified: true },
-  },
-  {
-    id: 4,
-    title: 'Herman Miller Aeron Ergonomic Chair — Size B',
-    priceInCredits: 650,
-    category: 'Furniture',
-    condition: 'GOOD',
-    primaryImageUrl: 'https://images.unsplash.com/photo-1580481072645-022f9a6d83d0?w=800&auto=format&fit=crop',
-    city: 'Metro District',
-    distance: 4.0,
-    seller: { id: 104, displayName: 'Office Upgrade Co.', sellerLevel: 'PLATINUM', trustScore: 100, averageRating: 5.0, reviewCount: 310, isVerified: true },
-  },
-]
+// Curated verified marketplace items showcasing rich multi-category catalog
+const MOCK_FEATURED = CURATED_PRODUCTS.slice(0, 12)
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -152,16 +108,31 @@ export default function HomePage() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Load backend products
+  // Load products with catalog merging & verified photography
   useEffect(() => {
     async function loadData() {
       try {
-        const res = await productService.getTrendingProducts(8)
-        if (res?.data?.content && res.data.content.length > 0) {
-          setFeaturedProducts(res.data.content)
+        const res = await productService.getTrendingProducts(12)
+        const apiProds = res?.data?.content || []
+        if (apiProds.length > 0) {
+          const enhancedApi = apiProds.map((p) => ({
+            ...p,
+            primaryImageUrl: getProductImage(p),
+            category: p.categoryName || p.category || 'Electronics',
+          }))
+          // Merge with curated items to ensure minimum 12 products across multiple categories
+          const merged = [...enhancedApi]
+          CURATED_PRODUCTS.forEach((cp) => {
+            if (!merged.some((m) => String(m.id) === String(cp.id) || m.title.toLowerCase() === cp.title.toLowerCase())) {
+              merged.push(cp)
+            }
+          })
+          setFeaturedProducts(merged.slice(0, 12))
+        } else {
+          setFeaturedProducts(CURATED_PRODUCTS.slice(0, 12))
         }
       } catch (err) {
-        // Fallback to rich mock data
+        setFeaturedProducts(CURATED_PRODUCTS.slice(0, 12))
       } finally {
         setLoading(false)
       }
@@ -415,9 +386,13 @@ export default function HomePage() {
                     {/* Product Image */}
                     <div className="relative aspect-square overflow-hidden bg-paper">
                       <img
-                        src={prod.primaryImageUrl || prod.images?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop'}
+                        src={getProductImage(prod)}
                         alt={prod.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        onError={(e) => {
+                          e.target.onerror = null
+                          e.target.src = getProductImage(prod)
+                        }}
                       />
                       
                       {/* Wishlist Button */}
@@ -788,9 +763,13 @@ export default function HomePage() {
                   <tr key={p.id} className="hover:bg-paper/50 transition-colors">
                     <td className="p-4 pl-6 font-medium text-near-black flex items-center gap-3">
                       <img
-                        src={p.primaryImageUrl || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&auto=format&fit=crop'}
-                        alt=""
-                        className="w-10 h-10 object-cover hairline-all"
+                        src={getProductImage(p)}
+                        alt={p.title}
+                        className="w-10 h-10 object-cover hairline-all rounded-xs"
+                        onError={(e) => {
+                          e.target.onerror = null
+                          e.target.src = getProductImage(p)
+                        }}
                       />
                       <span className="font-bodoni text-base">{p.title}</span>
                     </td>

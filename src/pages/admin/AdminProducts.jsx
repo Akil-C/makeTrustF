@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import adminService from '../../services/adminService'
 import { formatCredits } from '../../utils/formatters'
+import { getProductImage } from '../../utils/productsData'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import toast from 'react-hot-toast'
@@ -145,7 +146,7 @@ export default function AdminProducts() {
                   {filtered.map((p) => {
                     const price = p.priceInCredits ?? p.price ?? 0
                     const sellerName = p.seller?.displayName || p.sellerName || 'Verified Merchant'
-                    const image = p.primaryImageUrl || p.images?.[0]?.url || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=400&q=80'
+                    const image = getProductImage(p)
 
                     return (
                       <tr key={p.id} className="hover:bg-slate-50/70 transition-colors">
@@ -155,6 +156,10 @@ export default function AdminProducts() {
                               src={image}
                               alt=""
                               className="w-12 h-12 rounded-lg object-cover bg-slate-100 border border-slate-200 shrink-0"
+                              onError={(e) => {
+                                e.target.onerror = null
+                                e.target.src = getProductImage(p)
+                              }}
                             />
                             <div className="min-w-0">
                               <span className="font-bold text-slate-900 block truncate max-w-xs">{p.title}</span>
