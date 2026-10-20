@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import {
@@ -9,11 +9,23 @@ import {
   LayoutDashboard,
   Coins,
   PlusCircle,
+  Bell,
+  Check,
+  CheckCheck,
+  Package,
+  ShieldCheck,
+  AlertCircle,
 } from 'lucide-react'
 import { formatCredits } from '../../utils/formatters'
+import notificationService from '../../services/notificationService'
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [notifOpen, setNotifOpen] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [notifications, setNotifications] = useState([])
+  const notifRef = useRef(null)
+
   const { user, isAuthenticated, logout, walletBalance, hasRole } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -22,6 +34,7 @@ export default function Navbar() {
     logout()
     navigate('/login')
     setMobileMenuOpen(false)
+    setNotifOpen(false)
   }
 
   const isAdmin = hasRole('ADMIN')
@@ -33,6 +46,53 @@ export default function Navbar() {
     if (isAdmin) return '/admin/dashboard'
     if (isSeller) return '/seller/dashboard'
     return '/buyer/dashboard'
+  }
+
+  // Load unread notification count
+  useEffect(() => {
+    if (!isAuthenticated) return
+
+    let isMounted = true
+    const fetchNotifs = async () => {
+      try {
+        const countRes = await notificationService.getUnreadCount()
+        if (isMounted) setUnreadCount(countRes.data?.count || 0)
+
+        const listRes = await notificationService.getNotifications({ size: 8 })
+        const list = listRes.data?.content || listRes.data || []
+        if (isMounted) setNotifications(list)
+      } catch {
+        // quiet
+      }
+    }
+
+    fetchNotifs()
+    const timer = setInterval(fetchNotifs, 15000)
+    return () => {
+      isMounted = false
+      clearInterval(timer)
+    }
+  }, [isAuthenticated])
+
+  // Click outside to close notification popover
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (notifRef.current && !notifRef.current.contains(event.target)) {
+        setNotifOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const handleMarkAllRead = async () => {
+    try {
+      await notificationService.markAllAsRead()
+      setUnreadCount(0)
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })))
+    } catch {
+      setUnreadCount(0)
+    }
   }
 
   const isActive = (path) => {
@@ -48,11 +108,11 @@ export default function Navbar() {
     }`
 
   return (
-    <header className="sticky top-0 z-50 bg-[#F1F1ED]/95 backdrop-blur-md border-b border-slate-200/90 shadow-xs transition-colors duration-200">
+    <header className="sticky top-0 z-50 bg-[#F1F1ED]/95 backdrop-blur-md border-b border-slate-200/90 shadow-xs transition-colors duration-200 font-sans">
       {/* Primary Top Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3 lg:gap-6">
         
-        {/* Left: Brand Logo & Real-time Role Badge */}
+        {/* Left: Brand Logo & Role Badge */}
         <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
           <Link
             to="/"
@@ -71,19 +131,19 @@ export default function Navbar() {
           {isAuthenticated && (
             <div className="hidden sm:inline-flex items-center ml-1">
               {isAdmin && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-rose-50 text-rose-700 font-sans font-bold text-[11px] tracking-wide rounded-full border border-rose-200 shadow-xs">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-rose-50 text-rose-700 font-bold text-[11px] tracking-wide rounded-full border border-rose-200 shadow-xs">
                   <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
                   ADMIN
                 </span>
               )}
               {isSeller && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-emerald-50 text-emerald-700 font-sans font-bold text-[11px] tracking-wide rounded-full border border-emerald-200 shadow-xs">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-emerald-50 text-emerald-700 font-bold text-[11px] tracking-wide rounded-full border border-emerald-200 shadow-xs">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   SELLER
                 </span>
               )}
               {isBuyer && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-50 text-blue-700 font-sans font-bold text-[11px] tracking-wide rounded-full border border-blue-200 shadow-xs">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-50 text-blue-700 font-bold text-[11px] tracking-wide rounded-full border border-blue-200 shadow-xs">
                   <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
                   BUYER
                 </span>
@@ -145,6 +205,9 @@ export default function Navbar() {
                   <Link to="/seller/kyc" className={navLinkClass('/seller/kyc')}>
                     KYC
                   </Link>
+                  <Link to="/seller/chat" className={navLinkClass('/seller/chat')}>
+                    Messages
+                  </Link>
                   <Link to="/seller/ai-insights" className={navLinkClass('/seller/ai-insights')}>
                     AI
                   </Link>
@@ -194,7 +257,7 @@ export default function Navbar() {
           )}
         </nav>
 
-        {/* Right: Credits, User Dashboard & Auth CTAs */}
+        {/* Right: Credits, Notifications, User Dashboard & Auth CTAs */}
         <div className="hidden sm:flex items-center gap-2.5 shrink-0">
           {/* Universal Credits Pill: 0 MC until login, actual balance when authenticated */}
           <Link
@@ -219,6 +282,73 @@ export default function Navbar() {
               {isAuthenticated ? formatCredits(walletBalance || 0) : '0 MC'}
             </span>
           </Link>
+
+          {/* Real-time Notification Popover Button */}
+          {isAuthenticated && (
+            <div className="relative" ref={notifRef}>
+              <button
+                type="button"
+                onClick={() => setNotifOpen(!notifOpen)}
+                className="relative p-2 rounded-lg border border-slate-300 bg-white hover:border-slate-800 text-slate-700 transition-colors shadow-xs"
+                title="Notifications"
+                aria-label="View notifications"
+              >
+                <Bell className="w-4 h-4" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-600 text-white font-mono text-[9px] font-extrabold flex items-center justify-center animate-pulse">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Popover Dropdown */}
+              {notifOpen && (
+                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                    <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Notifications</span>
+                    {unreadCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleMarkAllRead}
+                        className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                      >
+                        <CheckCheck className="w-3.5 h-3.5" />
+                        <span>Mark all read</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="divide-y divide-slate-100 max-h-80 overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="p-8 text-center text-slate-400 text-xs">
+                        No new notifications at this time.
+                      </div>
+                    ) : (
+                      notifications.map((n) => (
+                        <div
+                          key={n.id}
+                          className={`p-3.5 transition-colors ${
+                            !n.isRead ? 'bg-blue-50/50' : 'hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className="flex items-start gap-2.5">
+                            <span className="w-2 h-2 rounded-full bg-blue-600 mt-1.5 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <span className="font-bold text-xs text-slate-900 block truncate">{n.title}</span>
+                              <p className="text-[11px] text-slate-600 mt-0.5 leading-snug">{n.message}</p>
+                              <span className="text-[10px] text-slate-400 mt-1 block">
+                                {n.createdAt ? new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recent'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {isAuthenticated ? (
             <>
@@ -261,7 +391,7 @@ export default function Navbar() {
             </div>
           )}
 
-          {/* Explore Market CTA Button (visible on xl screens to maintain clean spacing) */}
+          {/* Explore Market CTA Button */}
           <Link
             to="/search"
             className="hidden xl:flex bg-slate-900 text-white hover:bg-rose-600 rounded-lg px-3.5 py-1.5 transition-all duration-200 items-center gap-1.5 text-xs font-semibold group shadow-xs"
@@ -273,7 +403,7 @@ export default function Navbar() {
 
         {/* Mobile View: Credits + Hamburger */}
         <div className="flex sm:hidden items-center gap-2">
-          {/* Mobile Credits pill: 0 MC until login */}
+          {/* Mobile Credits pill */}
           <Link
             to={isAuthenticated ? getDashboardRoute() : '/login'}
             className="flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-900 border border-amber-300/80 rounded-md text-[11px] font-mono font-bold"
@@ -364,6 +494,9 @@ export default function Navbar() {
                       </Link>
                       <Link to="/seller/kyc" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-200/50">
                         KYC Verification
+                      </Link>
+                      <Link to="/seller/chat" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-200/50">
+                        Messages & Dialogues
                       </Link>
                       <Link to="/seller/ai-insights" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-200/50">
                         AI Seller Assistant

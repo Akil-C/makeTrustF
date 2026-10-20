@@ -1,354 +1,272 @@
-import { useState, useEffect, useCallback } from 'react'
-import { useSearchParams, useNavigate, Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useSearchParams, Link } from 'react-router-dom'
 import {
   Search,
   Filter,
   Grid,
   List,
-  SlidersHorizontal,
-  X,
-  MapPin,
   Heart,
-  Star,
-  Sparkles,
-  ArrowUpDown,
-  RefreshCw,
   ArrowUpRight,
-  Sliders,
+  MapPin,
+  ShieldCheck,
+  RotateCcw,
 } from 'lucide-react'
 import productService from '../../services/productService'
 import wishlistService from '../../services/wishlistService'
-import { PRODUCT_CATEGORIES, PRODUCT_CONDITIONS } from '../../utils/constants'
 import { formatCredits } from '../../utils/formatters'
 import Navbar from '../../components/common/Navbar'
 import Footer from '../../components/common/Footer'
-import SellerLevelBadge from '../../components/common/SellerLevelBadge'
-import Pagination from '../../components/common/Pagination'
-import LoadingSpinner from '../../components/common/LoadingSpinner'
 import EmptyState from '../../components/common/EmptyState'
+import LoadingSpinner from '../../components/common/LoadingSpinner'
+import Pagination from '../../components/common/Pagination'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
 import toast from 'react-hot-toast'
 
-const MOCK_SEARCH_RESULTS = [
-  {
-    id: 1,
-    title: 'iPhone 14 Pro 128GB Deep Purple — Unlocked',
-    priceInCredits: 750,
-    category: 'Electronics',
-    condition: 'LIKE_NEW',
-    description: 'Flawless condition, always kept in case with screen protector. Battery health 92%. Includes original box and fast charger.',
-    primaryImageUrl: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=600&auto=format&fit=crop',
-    city: 'Downtown',
-    distance: 2.3,
-    createdAt: '2026-10-04T10:00:00Z',
-    seller: { id: 101, displayName: 'TechHub Deals', sellerLevel: 'PLATINUM', averageRating: 4.9, trustScore: 99 },
-  },
-  {
-    id: 2,
-    title: 'Sony Alpha a7 III Mirrorless Camera + 28-70mm Lens',
-    priceInCredits: 1350,
-    category: 'Electronics',
-    condition: 'GOOD',
-    description: 'Low shutter count under 12k. Shipped with 2 extra batteries and dual charger.',
-    primaryImageUrl: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=600&auto=format&fit=crop',
-    city: 'North Side',
-    distance: 4.1,
-    createdAt: '2026-10-03T15:30:00Z',
-    seller: { id: 106, displayName: 'Lens Craft', sellerLevel: 'GOLD', averageRating: 4.8, trustScore: 97 },
-  },
-  {
-    id: 3,
-    title: 'Trek Marlin 7 Mountain Bike Large Frame 29" Wheels',
-    priceInCredits: 620,
-    category: 'Sports & Outdoors',
-    condition: 'GOOD',
-    description: 'Recently serviced hydraulic brakes and Shimano 1x10 drivetrain.',
-    primaryImageUrl: 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=600&auto=format&fit=crop',
-    city: 'East End',
-    distance: 1.8,
-    createdAt: '2026-10-05T08:15:00Z',
-    seller: { id: 105, displayName: 'Alex Rivera', sellerLevel: 'SILVER', averageRating: 4.7, trustScore: 94 },
-  },
-  {
-    id: 4,
-    title: 'Modern Velvet Sofa 3-Seater Emerald Green',
-    priceInCredits: 480,
-    category: 'Furniture',
-    condition: 'LIKE_NEW',
-    description: 'Only 6 months old. Moving out of state. Non-smoking, pet-free home.',
-    primaryImageUrl: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop',
-    city: 'South Suburbs',
-    distance: 5.5,
-    createdAt: '2026-10-02T12:00:00Z',
-    seller: { id: 104, displayName: 'Office Upgrade Co.', sellerLevel: 'PLATINUM', averageRating: 5.0, trustScore: 100 },
-  },
+const PRODUCT_CATEGORIES = [
+  'Electronics',
+  'Vehicles',
+  'Furniture',
+  'Fashion',
+  'Musical Instruments',
+  'Home Appliances',
+  'Sports',
+  'Collectibles',
+]
+
+const PRODUCT_CONDITIONS = [
+  { value: 'NEW', label: 'Brand New' },
+  { value: 'LIKE_NEW', label: 'Like New (Mint)' },
+  { value: 'GOOD', label: 'Good (Functional)' },
+  { value: 'FAIR', label: 'Fair' },
 ]
 
 export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const navigate = useNavigate()
 
-  // State from URL
-  const queryParam = searchParams.get('q') || ''
-  const categoryParam = searchParams.get('category') || ''
-  const minPriceParam = searchParams.get('minPrice') || ''
-  const maxPriceParam = searchParams.get('maxPrice') || ''
-  const conditionParam = searchParams.get('condition') || ''
-  const distanceParam = searchParams.get('distance') || '25'
-  const sortByParam = searchParams.get('sortBy') || 'newest'
-  const pageParam = parseInt(searchParams.get('page') || '0', 10)
+  const qParam = searchParams.get('q') || searchParams.get('keyword') || ''
+  const catParam = searchParams.get('category') || ''
+  const condParam = searchParams.get('condition') || ''
+  const minParam = searchParams.get('minPrice') || ''
+  const maxParam = searchParams.get('maxPrice') || ''
+  const sortParam = searchParams.get('sortBy') || 'newest'
+  const pageParam = parseInt(searchParams.get('page') || '1', 10)
 
-  // Local Form Controls
-  const [q, setQ] = useState(queryParam)
-  const [category, setCategory] = useState(categoryParam)
-  const [minPrice, setMinPrice] = useState(minPriceParam)
-  const [maxPrice, setMaxPrice] = useState(maxPriceParam)
-  const [condition, setCondition] = useState(conditionParam)
-  const [maxDistance, setMaxDistance] = useState(distanceParam)
-  const [sortBy, setSortBy] = useState(sortByParam)
-  const [viewMode, setViewMode] = useState('grid') // 'grid' | 'list'
-  const [showMobileFilters, setShowMobileFilters] = useState(false)
+  const [q, setQ] = useState(qParam)
+  const [category, setCategory] = useState(catParam)
+  const [condition, setCondition] = useState(condParam)
+  const [minPrice, setMinPrice] = useState(minParam)
+  const [maxPrice, setMaxPrice] = useState(maxParam)
+  const [sortBy, setSortBy] = useState(sortParam)
+  const [viewMode, setViewMode] = useState('grid')
 
-  // Data State
   const [products, setProducts] = useState([])
   const [totalItems, setTotalItems] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(true)
   const [wishlistIds, setWishlistIds] = useState(new Set())
 
-  const fetchProducts = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await productService.searchProducts({
-        q: queryParam,
-        category: categoryParam,
-        minPrice: minPriceParam || undefined,
-        maxPrice: maxPriceParam || undefined,
-        condition: conditionParam || undefined,
-        radius: distanceParam || undefined,
-        sortBy: sortByParam,
-        page: pageParam,
-        size: 12,
-      })
+  useEffect(() => {
+    setQ(qParam)
+    setCategory(catParam)
+    setCondition(condParam)
+    setMinPrice(minParam)
+    setMaxPrice(maxParam)
+    setSortBy(sortParam)
+  }, [qParam, catParam, condParam, minParam, maxParam, sortParam])
 
-      if (res.data && res.data.content) {
-        setProducts(res.data.content)
-        setTotalItems(res.data.totalElements || res.data.content.length)
-        setTotalPages(res.data.totalPages || 1)
-      } else {
-        throw new Error('Empty API response')
-      }
-    } catch {
-      // Fallback mock filtering
-      let filtered = [...MOCK_SEARCH_RESULTS]
-      if (queryParam) {
-        filtered = filtered.filter((p) =>
-          p.title.toLowerCase().includes(queryParam.toLowerCase()) ||
-          p.description.toLowerCase().includes(queryParam.toLowerCase())
-        )
-      }
-      if (categoryParam) {
-        filtered = filtered.filter((p) => p.category === categoryParam)
-      }
-      if (conditionParam) {
-        filtered = filtered.filter((p) => p.condition === conditionParam)
-      }
-      if (minPriceParam) {
-        filtered = filtered.filter((p) => (p.priceInCredits || p.price) >= Number(minPriceParam))
-      }
-      if (maxPriceParam) {
-        filtered = filtered.filter((p) => (p.priceInCredits || p.price) <= Number(maxPriceParam))
-      }
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true)
+      try {
+        const params = {
+          keyword: qParam || undefined,
+          condition: condParam || undefined,
+          minPrice: minParam ? parseInt(minParam, 10) : undefined,
+          maxPrice: maxParam ? parseInt(maxParam, 10) : undefined,
+          sortBy: sortParam,
+          page: pageParam - 1,
+          size: 12,
+        }
 
-      setProducts(filtered)
-      setTotalItems(filtered.length)
-      setTotalPages(1)
-    } finally {
-      setLoading(false)
+        const res = await productService.searchProducts(params)
+        const list = res.data?.content || res.data || []
+        setProducts(list)
+        setTotalItems(res.data?.totalElements || list.length)
+        setTotalPages(res.data?.totalPages || 1)
+      } catch {
+        setProducts([])
+        setTotalItems(0)
+      } finally {
+        setLoading(false)
+      }
     }
-  }, [queryParam, categoryParam, minPriceParam, maxPriceParam, conditionParam, distanceParam, sortByParam, pageParam])
 
-  useEffect(() => {
-    fetchProducts()
-  }, [fetchProducts])
+    loadData()
+  }, [qParam, catParam, condParam, minParam, maxParam, sortParam, pageParam])
 
-  useEffect(() => {
-    setQ(queryParam)
-    setCategory(categoryParam)
-    setMinPrice(minPriceParam)
-    setMaxPrice(maxPriceParam)
-    setCondition(conditionParam)
-    setMaxDistance(distanceParam)
-    setSortBy(sortByParam)
-  }, [queryParam, categoryParam, minPriceParam, maxPriceParam, conditionParam, distanceParam, sortByParam])
+  const applyFilters = (overrides = {}) => {
+    const next = {
+      q: overrides.q !== undefined ? overrides.q : q,
+      category: overrides.category !== undefined ? overrides.category : category,
+      condition: overrides.condition !== undefined ? overrides.condition : condition,
+      minPrice: overrides.minPrice !== undefined ? overrides.minPrice : minPrice,
+      maxPrice: overrides.maxPrice !== undefined ? overrides.maxPrice : maxPrice,
+      sortBy: overrides.sortBy !== undefined ? overrides.sortBy : sortBy,
+      page: overrides.page !== undefined ? overrides.page : 1,
+    }
 
-  const applyFilters = (newParams = {}) => {
-    const params = new URLSearchParams()
-    const nextQ = newParams.q !== undefined ? newParams.q : q
-    const nextCat = newParams.category !== undefined ? newParams.category : category
-    const nextMin = newParams.minPrice !== undefined ? newParams.minPrice : minPrice
-    const nextMax = newParams.maxPrice !== undefined ? newParams.maxPrice : maxPrice
-    const nextCond = newParams.condition !== undefined ? newParams.condition : condition
-    const nextDist = newParams.distance !== undefined ? newParams.distance : maxDistance
-    const nextSort = newParams.sortBy !== undefined ? newParams.sortBy : sortBy
-
-    if (nextQ) params.set('q', nextQ)
-    if (nextCat) params.set('category', nextCat)
-    if (nextMin) params.set('minPrice', nextMin)
-    if (nextMax) params.set('maxPrice', nextMax)
-    if (nextCond) params.set('condition', nextCond)
-    if (nextDist) params.set('distance', nextDist)
-    if (nextSort) params.set('sortBy', nextSort)
-    params.set('page', '0')
-
-    setSearchParams(params)
-    setShowMobileFilters(false)
+    const clean = {}
+    Object.keys(next).forEach((k) => {
+      if (next[k] !== '' && next[k] !== undefined && next[k] !== null) {
+        clean[k] = next[k]
+      }
+    })
+    setSearchParams(clean)
   }
 
   const resetFilters = () => {
     setQ('')
     setCategory('')
+    setCondition('')
     setMinPrice('')
     setMaxPrice('')
-    setCondition('')
-    setMaxDistance('25')
     setSortBy('newest')
-    setSearchParams(new URLSearchParams())
-    setShowMobileFilters(false)
+    setSearchParams({})
   }
 
-  const toggleWishlist = async (id, e) => {
+  const toggleWishlist = async (prodId, e) => {
     e.preventDefault()
     e.stopPropagation()
     try {
-      if (wishlistIds.has(id)) {
-        await wishlistService.removeFromWishlist(id)
+      if (wishlistIds.has(prodId)) {
+        await wishlistService.removeFromWishlist(prodId)
         setWishlistIds((prev) => {
           const next = new Set(prev)
-          next.delete(id)
+          next.delete(prodId)
           return next
         })
-        toast.success('Removed from wishlist')
+        toast.success('Removed from watchlist')
       } else {
-        await wishlistService.addToWishlist(id)
-        setWishlistIds((prev) => new Set(prev).add(id))
-        toast.success('Added to wishlist')
+        await wishlistService.addToWishlist(prodId)
+        setWishlistIds((prev) => new Set(prev).add(prodId))
+        toast.success('Saved to watchlist!')
       }
     } catch {
-      toast.success(wishlistIds.has(id) ? 'Removed from wishlist' : 'Added to wishlist')
-      setWishlistIds((prev) => {
-        const next = new Set(prev)
-        if (next.has(id)) next.delete(id)
-        else next.add(id)
-        return next
-      })
+      toast.success('Watchlist updated')
     }
   }
 
   return (
-    <div className="min-h-screen bg-plaster text-near-black flex flex-col justify-between">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col justify-between font-sans">
       <Navbar />
 
-      <main className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-8">
-        
-        {/* Editorial Search Header */}
-        <div className="space-y-4 text-center md:text-left hairline-b border-near-black/15 pb-8">
-          <div className="furniture-text text-accent">MARKETPLACE DISCOVERY</div>
-          <h1 className="font-bodoni text-3xl sm:text-4xl md:text-5xl font-semibold uppercase tracking-tight">
-            DISCOVER & COMPARE PRODUCTS
-          </h1>
-          <p className="text-xs sm:text-sm text-near-black/60 font-light max-w-2xl">
-            Browse verified marketplace listings, compare merchant offers, and find the best value for your credits.
-          </p>
+      <main className="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-6 flex-1">
+        <DemoDisclaimer />
 
-          {/* Top Search Controls Bar */}
+        {/* Discovery Search Header */}
+        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-4">
+          <div>
+            <span className="text-xs font-bold text-rose-600 uppercase tracking-wider block">Marketplace Discovery</span>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight mt-1">
+              Explore & Compare Verified Listings
+            </h1>
+            <p className="text-sm text-slate-600 mt-1 max-w-2xl leading-relaxed">
+              Discover active peer-to-peer offers, inspect seller trust scores, and transact safely with platform escrow buyer protection.
+            </p>
+          </div>
+
+          {/* Search Box */}
           <form
             onSubmit={(e) => { e.preventDefault(); applyFilters(); }}
-            className="pt-4 flex flex-col sm:flex-row items-center gap-2 max-w-3xl"
+            className="flex flex-col sm:flex-row items-center gap-3 pt-2 max-w-3xl"
           >
-            <div className="relative flex-1 w-full flex items-center pl-3 bg-paper hairline-all">
-              <Search className="w-4 h-4 text-near-black/40 shrink-0" />
+            <div className="relative flex-1 w-full">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Search by keywords..."
-                className="w-full px-3 py-2.5 text-sm text-near-black bg-transparent outline-none"
+                placeholder="Search products, brands, or models (e.g. MacBook, Camera, Sony)..."
+                className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-300 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white"
               />
             </div>
             <button
               type="submit"
-              className="w-full sm:w-auto bg-near-black text-plaster hover:bg-accent hover:text-white furniture-text px-6 py-2.5 transition-colors"
+              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm transition-colors shadow-xs"
             >
-              SEARCH
+              Search
             </button>
           </form>
         </div>
 
         {/* Layout Grid: Sidebar Filters + Results */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
           
           {/* Desktop Filter Sidebar */}
-          <div className="hidden lg:block bg-paper p-6 hairline-all space-y-6">
-            <div className="flex items-center justify-between hairline-b border-near-black/10 pb-3">
-              <span className="furniture-text font-bold text-near-black">FILTERS</span>
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-6">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                <Filter className="w-3.5 h-3.5 text-slate-500" />
+                Refine Search
+              </span>
               <button
+                type="button"
                 onClick={resetFilters}
-                className="furniture-text text-[10px] text-accent hover:underline"
+                className="text-xs font-bold text-rose-600 hover:text-rose-800 transition-colors"
               >
-                RESET ALL
+                Reset All
               </button>
             </div>
 
             {/* Category Filter */}
-            <div className="space-y-2">
-              <label className="furniture-text text-[10px] text-near-black/60 block">CATEGORY</label>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Category</label>
               <select
                 value={category}
                 onChange={(e) => applyFilters({ category: e.target.value })}
-                className="w-full bg-plaster border border-near-black/20 text-xs p-2.5 text-near-black outline-none"
+                className="w-full bg-slate-50 border border-slate-300 rounded-lg text-xs p-2.5 text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
               >
-                <option value="">ALL CATEGORIES</option>
+                <option value="">All Categories</option>
                 {PRODUCT_CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>{cat.toUpperCase()}</option>
+                  <option key={cat} value={cat}>{cat}</option>
                 ))}
               </select>
             </div>
 
             {/* Condition Filter */}
-            <div className="space-y-2">
-              <label className="furniture-text text-[10px] text-near-black/60 block">CONDITION</label>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Condition</label>
               <select
                 value={condition}
                 onChange={(e) => applyFilters({ condition: e.target.value })}
-                className="w-full bg-plaster border border-near-black/20 text-xs p-2.5 text-near-black outline-none"
+                className="w-full bg-slate-50 border border-slate-300 rounded-lg text-xs p-2.5 text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
               >
-                <option value="">ALL CONDITIONS</option>
+                <option value="">All Conditions</option>
                 {PRODUCT_CONDITIONS.map((cond) => (
-                  <option key={cond.value} value={cond.value}>{cond.label.toUpperCase()}</option>
+                  <option key={cond.value} value={cond.value}>{cond.label}</option>
                 ))}
               </select>
             </div>
 
             {/* Price Range */}
-            <div className="space-y-2">
-              <label className="furniture-text text-[10px] text-near-black/60 block">PRICE RANGE (MC)</label>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Price Range (MC)</label>
               <div className="grid grid-cols-2 gap-2">
                 <input
                   type="number"
-                  placeholder="Min"
+                  placeholder="Min MC"
                   value={minPrice}
                   onChange={(e) => setMinPrice(e.target.value)}
                   onBlur={() => applyFilters()}
-                  className="w-full bg-plaster border border-near-black/20 text-xs p-2 text-near-black outline-none"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg text-xs p-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
                 />
                 <input
                   type="number"
-                  placeholder="Max"
+                  placeholder="Max MC"
                   value={maxPrice}
                   onChange={(e) => setMaxPrice(e.target.value)}
                   onBlur={() => applyFilters()}
-                  className="w-full bg-plaster border border-near-black/20 text-xs p-2 text-near-black outline-none"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg text-xs p-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
                 />
               </div>
             </div>
@@ -357,42 +275,42 @@ export default function SearchPage() {
           {/* Results Column */}
           <div className="lg:col-span-3 space-y-6">
             
-            {/* View Mode & Sort Bar */}
-            <div className="bg-paper p-4 hairline-all flex flex-wrap items-center justify-between gap-4">
-              <div className="furniture-text text-xs text-near-black/70">
-                SHOWING <span className="font-bold text-accent">{products.length}</span> OF <span className="font-bold text-near-black">{totalItems}</span> PRODUCTS
+            {/* Toolbar */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
+              <div className="text-xs text-slate-600 font-medium">
+                Showing <strong className="text-slate-900 font-bold">{products.length}</strong> of <strong className="text-slate-900 font-bold">{totalItems}</strong> marketplace items
               </div>
 
-              <div className="flex items-center gap-4">
-                {/* Sort Dropdown */}
-                <div className="flex items-center gap-2">
-                  <span className="furniture-text text-[10px] text-near-black/60">SORT BY:</span>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-slate-500 font-semibold">Sort by:</span>
                   <select
                     value={sortBy}
                     onChange={(e) => applyFilters({ sortBy: e.target.value })}
-                    className="bg-plaster border border-near-black/20 text-xs p-1.5 text-near-black outline-none"
+                    className="bg-slate-50 border border-slate-300 rounded-lg text-xs p-1.5 text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
                   >
-                    <option value="newest">NEWEST ARRIVALS</option>
-                    <option value="price_asc">PRICE: LOW TO HIGH</option>
-                    <option value="price_desc">PRICE: HIGH TO LOW</option>
+                    <option value="newest">Newest Arrivals</option>
+                    <option value="price_asc">Price: Low to High</option>
+                    <option value="price_desc">Price: High to Low</option>
                   </select>
                 </div>
 
-                {/* View Toggle */}
-                <div className="flex items-center border border-near-black/20 bg-plaster">
+                <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
                   <button
+                    type="button"
                     onClick={() => setViewMode('grid')}
-                    className={`p-1.5 ${viewMode === 'grid' ? 'bg-near-black text-white' : 'text-near-black/60'}`}
+                    className={`p-2 transition-colors ${viewMode === 'grid' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-slate-900'}`}
                     aria-label="Grid View"
                   >
-                    <Grid className="w-4 h-4" />
+                    <Grid className="w-3.5 h-3.5" />
                   </button>
                   <button
+                    type="button"
                     onClick={() => setViewMode('list')}
-                    className={`p-1.5 ${viewMode === 'list' ? 'bg-near-black text-white' : 'text-near-black/60'}`}
+                    className={`p-2 transition-colors ${viewMode === 'list' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-slate-900'}`}
                     aria-label="List View"
                   >
-                    <List className="w-4 h-4" />
+                    <List className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
@@ -400,90 +318,101 @@ export default function SearchPage() {
 
             {/* Products List/Grid */}
             {loading ? (
-              <div className="py-20 flex justify-center">
+              <div className="py-20 flex justify-center bg-white rounded-2xl border border-slate-200">
                 <LoadingSpinner size="lg" />
               </div>
             ) : products.length === 0 ? (
-              <EmptyState
-                title="NO PRODUCTS FOUND"
-                description="Try adjusting your keywords or clearing selected filters."
-                actionLabel="RESET ALL FILTERS"
-                onAction={resetFilters}
-              />
+              <div className="bg-white rounded-2xl p-12 border border-slate-200 text-center">
+                <EmptyState
+                  title="No Matching Listings"
+                  description="Try adjusting your search keywords or resetting price filters."
+                  actionLabel="Reset All Filters"
+                  onAction={resetFilters}
+                />
+              </div>
             ) : (
               <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
-                {products.map((prod) => (
-                  <div
-                    key={prod.id}
-                    className={`group bg-paper hairline-all transition-all duration-300 hover:shadow-md flex ${
-                      viewMode === 'list' ? 'flex-col sm:flex-row items-center justify-between p-4 gap-6' : 'flex-col justify-between'
-                    }`}
-                  >
-                    <div className={viewMode === 'list' ? 'flex items-center gap-6 w-full' : ''}>
-                      {/* Thumbnail */}
-                      <div className={`relative bg-plaster overflow-hidden ${viewMode === 'list' ? 'w-32 h-32 shrink-0' : 'aspect-square w-full'}`}>
-                        <img
-                          src={prod.primaryImageUrl || prod.images?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop'}
-                          alt={prod.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                        <button
-                          onClick={(e) => toggleWishlist(prod.id, e)}
-                          className="absolute top-2 right-2 p-1.5 bg-plaster/90 hover:bg-white hairline-all text-near-black hover:text-accent transition-colors"
-                        >
-                          <Heart className={`w-3.5 h-3.5 ${wishlistIds.has(prod.id) ? 'fill-accent text-accent' : ''}`} />
-                        </button>
-                      </div>
+                {products.map((prod) => {
+                  const price = prod.priceInCredits ?? prod.price ?? 0
+                  const image = prod.primaryImageUrl || prod.images?.[0]?.url || prod.images?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop'
+                  const condition = prod.condition || 'GOOD'
+                  const sellerName = prod.seller?.displayName || prod.seller?.name || 'Verified Merchant'
 
-                      {/* Content */}
-                      <div className="p-4 space-y-2 flex-1">
-                        <div className="flex items-center justify-between text-[10px] furniture-text text-near-black/50">
-                          <span>{prod.category || 'GENERAL'}</span>
-                          {prod.city && (
-                            <span className="flex items-center gap-1">
-                              <MapPin className="w-3 h-3 text-accent" />
-                              {prod.city}
+                  return (
+                    <div
+                      key={prod.id}
+                      className={`group bg-white rounded-2xl border border-slate-200 shadow-xs hover:border-slate-300 hover:shadow-sm transition-all flex ${
+                        viewMode === 'list' ? 'flex-col sm:flex-row items-center justify-between p-4 gap-5' : 'flex-col justify-between overflow-hidden'
+                      }`}
+                    >
+                      <div className={viewMode === 'list' ? 'flex items-center gap-5 w-full min-w-0' : ''}>
+                        {/* Thumbnail */}
+                        <div className={`relative bg-slate-100 overflow-hidden ${viewMode === 'list' ? 'w-32 h-32 rounded-xl shrink-0' : 'aspect-4/3 w-full'}`}>
+                          <img
+                            src={image}
+                            alt={prod.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                          <button
+                            type="button"
+                            onClick={(e) => toggleWishlist(prod.id, e)}
+                            className="absolute top-2 right-2 p-1.5 bg-white/90 backdrop-blur-md rounded-full shadow-xs text-slate-400 hover:text-rose-600 transition-colors"
+                            title="Save to watchlist"
+                          >
+                            <Heart className={`w-3.5 h-3.5 ${wishlistIds.has(prod.id) ? 'fill-rose-600 text-rose-600' : ''}`} />
+                          </button>
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-4 space-y-2 flex-1 min-w-0">
+                          <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500">
+                            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 uppercase tracking-wider text-[10px]">
+                              {condition}
                             </span>
-                          )}
-                        </div>
+                            {prod.city && (
+                              <span className="flex items-center gap-1 text-slate-500">
+                                <MapPin className="w-3 h-3 text-rose-500" />
+                                {prod.city}
+                              </span>
+                            )}
+                          </div>
 
-                        <h3 className="font-bodoni font-medium text-lg text-near-black group-hover:text-accent transition-colors line-clamp-1">
-                          {prod.title}
-                        </h3>
+                          <h3 className="font-bold text-sm sm:text-base text-slate-900 group-hover:text-rose-600 transition-colors line-clamp-1">
+                            {prod.title}
+                          </h3>
 
-                        {prod.description && (
-                          <p className="text-xs text-near-black/60 font-light line-clamp-2 leading-relaxed">
-                            {prod.description}
+                          <p className="text-xs text-slate-500 font-medium">
+                            Merchant: <strong className="text-slate-700">{sellerName}</strong>
                           </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Footer / Price */}
-                    <div className={`p-4 pt-0 flex items-center justify-between ${viewMode === 'list' ? 'w-full sm:w-auto shrink-0 border-t sm:border-t-0 sm:border-l border-near-black/10 sm:pl-6' : ''}`}>
-                      <div>
-                        <div className="furniture-text text-[9px] text-near-black/50">PRICE</div>
-                        <div className="font-bodoni text-xl font-bold text-accent">
-                          {formatCredits(prod.priceInCredits || prod.price)}
                         </div>
                       </div>
 
-                      <Link
-                        to={`/products/${prod.id}`}
-                        className="bg-near-black text-plaster hover:bg-accent hover:text-white furniture-text px-4 py-2 text-xs transition-colors flex items-center gap-1 ml-4"
-                      >
-                        <span>VIEW</span>
-                        <ArrowUpRight className="w-3.5 h-3.5" />
-                      </Link>
+                      {/* Footer / Price */}
+                      <div className={`p-4 pt-0 flex items-center justify-between ${viewMode === 'list' ? 'w-full sm:w-auto shrink-0 border-t sm:border-t-0 sm:border-l border-slate-100 sm:pl-5' : ''}`}>
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Price</span>
+                          <span className="text-lg font-mono font-extrabold text-slate-900">
+                            {formatCredits(price)}
+                          </span>
+                        </div>
+
+                        <Link
+                          to={`/products/${prod.id}`}
+                          className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl px-4 py-2 text-xs font-bold transition-colors flex items-center gap-1 shadow-xs ml-4"
+                        >
+                          <span>View Offer</span>
+                          <ArrowUpRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="pt-8">
+              <div className="pt-6">
                 <Pagination
                   currentPage={pageParam}
                   totalPages={totalPages}

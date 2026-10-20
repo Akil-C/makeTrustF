@@ -2,208 +2,302 @@ import { useState, useEffect, useRef } from 'react'
 import {
   Send,
   ShieldAlert,
-  ExternalLink,
   MessageSquare,
   CheckCheck,
+  Package,
+  AlertCircle,
+  ExternalLink,
+  ShieldCheck,
 } from 'lucide-react'
+import { useAuth } from '../../contexts/AuthContext'
 import chatService from '../../services/chatService'
-import { formatCredits, formatRelativeTime } from '../../utils/formatters'
+import { formatCredits } from '../../utils/formatters'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
-
-const MOCK_CONVERSATIONS = [
-  {
-    id: 'conv-1',
-    sellerName: 'TechHub Deals',
-    sellerAvatar: 'https://i.pravatar.cc/150?u=techhub',
-    product: {
-      id: 'f1',
-      title: 'iPhone 15 Pro Max 256GB - Natural Titanium',
-      price: 950,
-      image: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=600&auto=format&fit=crop',
-    },
-    lastMessage: 'Is the phone available for pickup today in Downtown?',
-    lastMessageTime: '2026-10-06T10:15:00Z',
-    unreadCount: 1,
-  },
-  {
-    id: 'conv-2',
-    sellerName: 'AudioFile Store',
-    sellerAvatar: 'https://i.pravatar.cc/150?u=audio',
-    product: {
-      id: 'f2',
-      title: 'Sony WH-1000XM5 Wireless Headphones',
-      price: 280,
-      image: 'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=600&auto=format&fit=crop',
-    },
-    lastMessage: 'Yes, includes original box and factory receipt!',
-    lastMessageTime: '2026-10-05T14:20:00Z',
-    unreadCount: 0,
-  },
-]
-
-const MOCK_MESSAGES = [
-  { id: 'm1', sender: 'seller', text: 'Hi! Thanks for reaching out about the iPhone 15 Pro Max.', time: '10:10 AM' },
-  { id: 'm2', sender: 'buyer', text: 'Is the phone available for pickup today in Downtown?', time: '10:15 AM' },
-  { id: 'm3', sender: 'seller', text: 'Yes! I can meet near Market St. All payments go through Nexora MC Escrow.', time: '10:16 AM' },
-]
+import LoadingSpinner from '../../components/common/LoadingSpinner'
+import toast from 'react-hot-toast'
 
 export default function BuyerChat() {
-  const [conversations, setConversations] = useState(MOCK_CONVERSATIONS)
-  const [activeConv, setActiveConv] = useState(MOCK_CONVERSATIONS[0])
-  const [messages, setMessages] = useState(MOCK_MESSAGES)
+  const { user } = useAuth()
+  const [rooms, setRooms] = useState([])
+  const [activeRoom, setActiveRoom] = useState(null)
+  const [messages, setMessages] = useState([])
   const [inputMessage, setInputMessage] = useState('')
+  const [loadingRooms, setLoadingRooms] = useState(true)
+  const [loadingMessages, setLoadingMessages] = useState(false)
+  const [sending, setSending] = useState(false)
   const messagesEndRef = useRef(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
+  // Load rooms on mount
+  useEffect(() => {
+    async function loadRooms() {
+      setLoadingRooms(true)
+      try {
+        const res = await chatService.getMyRooms()
+        const list = res.data || []
+        setRooms(list)
+        if (list.length > 0) {
+          setActiveRoom(list[0])
+        }
+      } catch {
+        setRooms([])
+      } finally {
+        setLoadingRooms(false)
+      }
+    }
+    loadRooms()
+  }, [])
+
+  // Load messages when active room changes
+  useEffect(() => {
+    if (!activeRoom?.id) return
+
+    async function loadMessages() {
+      setLoadingMessages(true)
+      try {
+        const res = await chatService.getRoomMessages(activeRoom.id)
+        setMessages(res.data || [])
+        await chatService.markAsRead(activeRoom.id)
+      } catch {
+        setMessages([])
+      } finally {
+        setLoadingMessages(false)
+      }
+    }
+    loadMessages()
+
+    // 5-second polling for active room messages as reliable live fallback
+    const interval = setInterval(async () => {
+      try {
+        const res = await chatService.getRoomMessages(activeRoom.id)
+        setMessages(res.data || [])
+      } catch {
+        // quiet
+      }
+    }, 5000)
+
+    return () => clearInterval(interval)
+  }, [activeRoom?.id])
+
   useEffect(() => {
     scrollToBottom()
   }, [messages])
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault()
-    if (!inputMessage.trim()) return
+    if (!inputMessage.trim() || !activeRoom?.id || sending) return
 
-    const newMsg = {
-      id: `m-${Date.now()}`,
-      sender: 'buyer',
-      text: inputMessage,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    const text = inputMessage.trim()
+    setInputMessage('')
+    setSending(true)
+
+    // Check suspicious content
+    const lower = text.toLowerCase()
+    const isSuspicious =
+      lower.includes('whatsapp') ||
+      lower.includes('upi') ||
+      lower.includes('gpay') ||
+      lower.includes('phonepe') ||
+      lower.includes('bank transfer') ||
+      lower.includes('outside')
+
+    if (isSuspicious) {
+      toast('Reminder: Payments made outside Nexora Escrow cannot be insured or refunded.', {
+        icon: '⚠️',
+      })
     }
 
-    setMessages((prev) => [...prev, newMsg])
-    setInputMessage('')
-
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `m-reply-${Date.now()}`,
-          sender: 'seller',
-          text: 'Got your message! Let me confirm the exact meeting location.',
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      ])
-    }, 1200)
+    try {
+      const res = await chatService.sendMessage(activeRoom.id, { content: text, type: 'TEXT' })
+      if (res.data) {
+        setMessages((prev) => [...prev, res.data])
+      }
+    } catch (err) {
+      toast.error('Unable to send message')
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F7F4] text-[#070707] pb-12 flex flex-col">
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-16 font-sans">
       <DemoDisclaimer />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full flex flex-col">
-        <div className="bg-white border border-[#070707]/10 flex-1 flex flex-col md:flex-row overflow-hidden min-h-[640px]">
-          {/* Left Sidebar: Conversations list */}
-          <div className="w-full md:w-80 border-r border-[#070707]/10 bg-[#F1F1ED]/50 flex flex-col shrink-0">
-            <div className="p-4 border-b border-[#070707]/10 flex items-center justify-between">
-              <h2 className="font-serif font-bold text-[#070707] text-lg flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-[#EF6F79]" /> Seller Dialogues
-              </h2>
-              <span className="furniture-subtitle text-[10px] bg-[#070707] text-white px-2 py-0.5">
-                {conversations.length} CONVS
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* Header */}
+        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Direct Buyer Channel</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1 flex items-center gap-2.5">
+              <MessageSquare className="w-7 h-7 text-blue-600" />
+              <span>Merchant Dialogues & Inquiry</span>
+            </h1>
+            <p className="text-sm text-slate-600 mt-1 max-w-2xl leading-relaxed">
+              Real-time secure chat with verified merchants. Agree on terms, condition, and exchange details with escrow fraud protection.
+            </p>
+          </div>
+        </div>
+
+        {/* Anti-Fraud Banner */}
+        <div className="bg-amber-50 rounded-xl p-3.5 border border-amber-200 flex items-center gap-3 text-amber-900 text-xs">
+          <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0" />
+          <p>
+            <strong>Nexora Escrow Shield:</strong> Never share phone numbers or transfer funds outside Nexora. All purchases must proceed through <strong>Authorize Escrow Order</strong> to be insured.
+          </p>
+        </div>
+
+        {/* Chat Interface Container */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden flex flex-col md:flex-row min-h-[620px]">
+          {/* Left Panel: Conversation Rooms */}
+          <div className="w-full md:w-80 border-r border-slate-200 bg-slate-50 flex flex-col shrink-0">
+            <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Conversations</span>
+              <span className="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-bold text-[11px]">
+                {rooms.length} active
               </span>
             </div>
 
-            <div className="divide-y divide-[#070707]/10 overflow-y-auto flex-1">
-              {conversations.map((c) => (
-                <div
-                  key={c.id}
-                  onClick={() => setActiveConv(c)}
-                  className={`p-4 cursor-pointer transition-colors flex items-center gap-3 ${
-                    activeConv.id === c.id ? 'bg-white border-l-4 border-[#EF6F79]' : 'hover:bg-[#E4E5E0]/50'
-                  }`}
-                >
-                  <img src={c.sellerAvatar} alt="" className="w-10 h-10 object-cover shrink-0 border border-[#070707]/10" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-baseline mb-0.5">
-                      <span className="font-bold text-[#070707] text-xs truncate">{c.sellerName}</span>
-                      <span className="text-[10px] text-[#070707]/40 font-mono">{formatRelativeTime(c.lastMessageTime)}</span>
-                    </div>
-                    <p className="text-xs text-[#EF6F79] font-medium truncate">{c.product.title}</p>
-                    <p className="text-xs text-[#070707]/60 truncate mt-0.5">{c.lastMessage}</p>
-                  </div>
+            <div className="divide-y divide-slate-200 overflow-y-auto flex-1">
+              {loadingRooms ? (
+                <div className="p-8 flex justify-center">
+                  <LoadingSpinner size="sm" />
                 </div>
-              ))}
+              ) : rooms.length === 0 ? (
+                <div className="p-8 text-center text-slate-400 text-xs space-y-2">
+                  <MessageSquare className="w-8 h-8 mx-auto opacity-40 text-slate-400" />
+                  <p>No active chat rooms yet.</p>
+                  <p className="text-[11px] text-slate-500">Visit any product listing and click <strong>"Message Seller"</strong> to initiate an inquiry.</p>
+                </div>
+              ) : (
+                rooms.map((room) => {
+                  const otherName = room.otherUser?.name || 'Seller'
+                  const productTitle = room.product?.title || 'Listing Inquiry'
+                  const isSelected = activeRoom?.id === room.id
+
+                  return (
+                    <div
+                      key={room.id}
+                      onClick={() => setActiveRoom(room)}
+                      className={`p-4 cursor-pointer transition-colors ${
+                        isSelected ? 'bg-white border-l-4 border-slate-900' : 'hover:bg-slate-100/70'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-xs text-slate-900 truncate max-w-[140px]">{otherName}</span>
+                        <span className="text-[10px] text-slate-400">
+                          {room.lastMessageAt ? new Date(room.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-600 font-medium truncate mb-1">{productTitle}</p>
+                      <p className="text-[11px] text-slate-400 truncate">{room.lastMessage || 'Room created'}</p>
+                    </div>
+                  )
+                })
+              )}
             </div>
           </div>
 
-          {/* Right Column: Chat Window */}
+          {/* Right Panel: Chat Thread */}
           <div className="flex-1 flex flex-col bg-white">
-            {/* Product Context Header */}
-            <div className="p-4 bg-[#F1F1ED]/80 border-b border-[#070707]/10 flex items-center justify-between gap-4 shrink-0">
-              <div className="flex items-center gap-3">
-                <img
-                  src={activeConv.product.image}
-                  alt=""
-                  className="w-12 h-12 object-cover border border-[#070707]/10 shrink-0"
-                />
-                <div>
-                  <span className="furniture-subtitle text-[10px] text-[#070707]/60 block">DIALOGUE WITH {activeConv.sellerName}</span>
-                  <h3 className="font-serif font-bold text-[#070707] text-sm line-clamp-1">{activeConv.product.title}</h3>
-                  <span className="text-xs font-mono font-bold text-[#EF6F79]">{formatCredits(activeConv.product.price)}</span>
-                </div>
-              </div>
-
-              <a
-                href={`/products/${activeConv.product.id}`}
-                className="px-4 py-2 bg-[#070707] hover:bg-[#EF6F79] text-white furniture-subtitle text-[11px] transition-colors flex items-center gap-1.5 shrink-0"
-              >
-                <span>VIEW PRODUCT</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            </div>
-
-            {/* Off-Platform Warning Banner */}
-            <div className="bg-[#F3D6DC]/60 px-4 py-2.5 border-b border-[#EF6F79]/30 text-[#070707] text-xs flex items-center gap-2 shrink-0">
-              <ShieldAlert className="w-4 h-4 text-[#EF6F79] shrink-0" />
-              <span>
-                <strong>Escrow Protection Notice:</strong> Never transfer funds outside Nexora Escrow. Off-platform transactions void buyer protection.
-              </span>
-            </div>
-
-            {/* Message Stream */}
-            <div className="flex-1 p-5 overflow-y-auto space-y-4 bg-[#F7F7F4]">
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex flex-col ${msg.sender === 'buyer' ? 'items-end' : 'items-start'}`}
-                >
-                  <div
-                    className={`max-w-md p-4 text-xs leading-relaxed border ${
-                      msg.sender === 'buyer'
-                        ? 'bg-[#070707] text-white border-[#070707]'
-                        : 'bg-white text-[#070707] border-[#070707]/15'
-                    }`}
-                  >
-                    <p>{msg.text}</p>
+            {activeRoom ? (
+              <>
+                {/* Active Chat Header */}
+                <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-white">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-700 text-sm border border-slate-200">
+                      {activeRoom.otherUser?.name ? activeRoom.otherUser.name[0].toUpperCase() : 'S'}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-900 text-sm">
+                          {activeRoom.otherUser?.name || 'Verified Merchant'}
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                          <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                          Escrow Protected
+                        </span>
+                      </div>
+                      {activeRoom.product && (
+                        <p className="text-xs text-slate-500 truncate max-w-md">
+                          Regarding: <strong>{activeRoom.product.title}</strong> ({formatCredits(activeRoom.product.priceInCredits ?? 0)})
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <span className="text-[10px] font-mono text-[#070707]/40 mt-1 px-1 flex items-center gap-1">
-                    {msg.time}
-                    {msg.sender === 'buyer' && <CheckCheck className="w-3 h-3 text-[#EF6F79]" />}
-                  </span>
                 </div>
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
 
-            {/* Message Input Box */}
-            <form onSubmit={handleSendMessage} className="p-4 border-t border-[#070707]/10 flex items-center gap-3 bg-white shrink-0">
-              <input
-                type="text"
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                placeholder="Inquire about offer details, local pickup or verification..."
-                className="flex-1 px-4 py-3 bg-[#F1F1ED] border border-[#070707]/10 focus:border-[#070707] focus:bg-white text-xs outline-none transition-all font-sans"
-              />
-              <button
-                type="submit"
-                className="p-3 bg-[#070707] hover:bg-[#EF6F79] text-white transition-colors shrink-0"
-              >
-                <Send className="w-4 h-4" />
-              </button>
-            </form>
+                {/* Messages Stream */}
+                <div className="flex-1 p-5 overflow-y-auto space-y-3 bg-slate-50/50">
+                  {loadingMessages ? (
+                    <div className="p-8 flex justify-center">
+                      <LoadingSpinner size="md" />
+                    </div>
+                  ) : messages.length === 0 ? (
+                    <div className="p-12 text-center text-slate-400 text-xs">
+                      Say hello to {activeRoom.otherUser?.name || 'the seller'}! Ask about availability, condition, or pickup location.
+                    </div>
+                  ) : (
+                    messages.map((m) => {
+                      const isMe = m.sender?.id === user?.id || m.senderId === user?.id
+
+                      return (
+                        <div
+                          key={m.id}
+                          className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
+                        >
+                          <div
+                            className={`max-w-md px-4 py-2.5 rounded-2xl text-xs sm:text-sm ${
+                              isMe
+                                ? 'bg-slate-900 text-white rounded-br-xs'
+                                : 'bg-white text-slate-900 border border-slate-200 rounded-bl-xs shadow-xs'
+                            }`}
+                          >
+                            <p className="leading-relaxed whitespace-pre-wrap">{m.content}</p>
+                          </div>
+                          <span className="text-[10px] text-slate-400 mt-1 px-1">
+                            {m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                          </span>
+                        </div>
+                      )
+                    })
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Input Field */}
+                <form onSubmit={handleSendMessage} className="p-4 border-t border-slate-200 bg-white flex gap-3">
+                  <input
+                    type="text"
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    placeholder="Type an inquiry or negotiate terms..."
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!inputMessage.trim() || sending}
+                    className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Send</span>
+                  </button>
+                </form>
+              </>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-400">
+                <MessageSquare className="w-12 h-12 text-slate-300 mb-3" />
+                <h3 className="text-base font-bold text-slate-700">Select a Conversation</h3>
+                <p className="text-xs text-slate-500 max-w-sm mt-1">
+                  Choose a dialogue from the left list to review chat logs, send messages, or coordinate delivery.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>

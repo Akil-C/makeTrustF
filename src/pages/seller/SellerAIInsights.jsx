@@ -5,133 +5,177 @@ import {
   Zap,
   CheckCircle2,
   Bot,
+  TrendingUp,
+  ArrowRight,
+  ShieldCheck,
+  RefreshCw,
 } from 'lucide-react'
 import aiService from '../../services/aiService'
 import { formatCredits } from '../../utils/formatters'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
+import LoadingSpinner from '../../components/common/LoadingSpinner'
+import toast from 'react-hot-toast'
 
 const MOCK_AI_REPORT = {
   overallHealthScore: 94,
   strengths: [
-    'Excellent response time (< 15 mins) builds high buyer conversion.',
-    '100% positive escrow delivery rating on all electronics listings.',
-    'Competitive pricing on Apple devices matches current Bay Area market averages.',
+    'Fast merchant response latency (< 15 mins) triggers high inquiry-to-escrow conversion.',
+    '100% positive delivery fulfillment track record on all active electronics listings.',
+    'Transparent item condition tags strictly adhere to Nexora quality verification guidelines.',
   ],
   weaknesses: [
-    'Item descriptions under 50 words have 35% lower view-to-inquiry ratios.',
-    'Only 1 primary photo uploaded for Sony Headphones listing (recommend 3+ angles).',
+    'Short item descriptions (under 50 words) receive 35% fewer direct buyer messages.',
+    'Add 3 or more detailed photos for high-value tech listings to accelerate escrow closes.',
   ],
   pricingRecommendations: [
-    { product: 'Sony WH-1000XM5 Headphones', currentPrice: 280, recommendedPrice: 310, logic: 'High demand surge (+22%) in local zip code.' },
-    { product: 'MacBook Air M2', currentPrice: 1100, recommendedPrice: 1080, logic: 'Adjusting -20 MC will trigger 4 wishlist conversion alerts.' },
+    {
+      product: 'Sony WH-1000XM5 Wireless Headphones',
+      currentPrice: 28000,
+      recommendedPrice: 29500,
+      logic: 'Strong local buyer demand (+24% search volume in Bengaluru) supports higher premium.',
+    },
+    {
+      product: 'Apple MacBook Pro 16" M3 Max',
+      currentPrice: 245000,
+      recommendedPrice: 239000,
+      logic: 'A slight -6,000 MC adjustment will trigger direct notification to 5 interested buyers.',
+    },
   ],
   suspiciousSignals: [
-    { type: 'Off-Platform Attempt Blocked', detail: 'Buyer requested Telegram chat on iPhone 15 listing. Escrow warning trigger fired.', risk: 'LOW' },
+    {
+      type: 'Zero Security Incidents',
+      detail: 'All customer communications remained on-platform with zero off-platform payment infractions.',
+      risk: 'LOW',
+    },
   ],
 }
 
 export default function SellerAIInsights() {
   const [report, setReport] = useState(MOCK_AI_REPORT)
   const [loading, setLoading] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+
+  const loadAi = async () => {
+    setLoading(true)
+    try {
+      const res = await aiService.getStoreInsights()
+      if (res.data) setReport(res.data)
+    } catch {
+      // Keep curated report
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    async function loadAi() {
-      setLoading(true)
-      try {
-        const res = await aiService.getStoreInsights()
-        if (res.data) setReport(res.data)
-      } catch {
-        // Fallback mock
-      } finally {
-        setLoading(false)
-      }
-    }
     loadAi()
   }, [])
 
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    await new Promise((r) => setTimeout(r, 900))
+    setRefreshing(false)
+    toast.success('Gemini AI Store Intelligence refreshed with latest metrics!')
+  }
+
   return (
-    <div className="min-h-screen bg-[#F7F7F4] text-[#070707] pb-16">
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-16 font-sans">
       <DemoDisclaimer />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-        {/* Top Header */}
-        <div className="bg-[#070707] text-white p-8 border border-[#070707] flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#EF6F79]/20 text-[#EF6F79] text-[10px] font-mono uppercase tracking-wider mb-3 border border-[#EF6F79]/30">
-              <Bot className="w-4 h-4" /> POWERED BY GEMINI AI ENGINE
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* Header Banner */}
+        <div className="bg-slate-900 rounded-2xl p-6 sm:p-8 text-white shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-emerald-400 text-xs font-bold tracking-wide">
+              <Bot className="w-3.5 h-3.5" />
+              <span>POWERED BY GOOGLE GEMINI AI</span>
             </div>
-            <h1 className="font-serif text-3xl sm:text-4xl">Gemini AI Store Intelligence</h1>
-            <p className="text-xs text-[#F1F1ED]/80 mt-1 max-w-2xl">
-              Automated audit analyzing market competitiveness, description completeness, pricing optimization, and transaction security.
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+              Seller Intelligence & Catalog Optimization
+            </h1>
+            <p className="text-sm text-slate-300 max-w-2xl leading-relaxed">
+              Automated telemetry inspecting pricing elasticity, description fidelity, buyer inquiry conversion, and escrow safety.
             </p>
           </div>
 
-          <div className="bg-[#F1F1ED]/10 p-6 border border-white/10 text-center shrink-0">
-            <span className="furniture-subtitle text-[10px] text-[#EF6F79] block">AI STORE HEALTH SCORE</span>
-            <span className="text-4xl font-mono font-bold text-white">{report.overallHealthScore}/100</span>
+          <div className="bg-white/10 rounded-2xl p-5 text-center shrink-0 border border-white/10 min-w-[160px]">
+            <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
+              Store Health Rating
+            </span>
+            <span className="text-4xl font-mono font-extrabold text-emerald-400 block mt-1">
+              {report.overallHealthScore || 94}%
+            </span>
+            <span className="text-[11px] text-emerald-300 font-medium block mt-1">Excellent Standing</span>
           </div>
+        </div>
+
+        {/* Action bar */}
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 shadow-xs transition-colors"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+            <span>{refreshing ? 'Analyzing Store Telemetry...' : 'Refresh AI Analysis'}</span>
+          </button>
         </div>
 
         {/* Strengths & Weaknesses Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Strengths Card */}
-          <div className="bg-white p-6 border border-[#070707]/10 space-y-4">
-            <h3 className="font-serif font-bold text-[#070707] text-lg flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600" /> Store Strengths & Competitive Edges
-            </h3>
-            <ul className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Strengths */}
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-4">
+            <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+              <h3 className="font-extrabold text-base text-slate-900">Key Merchant Strengths</h3>
+            </div>
+            <div className="space-y-3">
               {report.strengths.map((str, idx) => (
-                <li key={idx} className="p-3 bg-[#F1F1ED] text-xs text-[#070707] border border-[#070707]/10 flex items-start gap-2">
-                  <span className="font-bold text-[#EF6F79] shrink-0">•</span>
+                <div key={idx} className="flex items-start gap-3 p-3 rounded-xl bg-emerald-50/60 border border-emerald-100 text-xs text-emerald-950 leading-relaxed font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
                   <span>{str}</span>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
 
-          {/* Weaknesses Card */}
-          <div className="bg-white p-6 border border-[#070707]/10 space-y-4">
-            <h3 className="font-serif font-bold text-[#070707] text-lg flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-[#EF6F79]" /> Actionable Improvement Gaps
-            </h3>
-            <ul className="space-y-3">
-              {report.weaknesses.map((weak, idx) => (
-                <li key={idx} className="p-3 bg-[#F3D6DC]/40 text-xs text-[#070707] border border-[#EF6F79]/30 flex items-start gap-2">
-                  <span className="font-bold text-[#EF6F79] shrink-0">•</span>
-                  <span>{weak}</span>
-                </li>
+          {/* Weaknesses / Opportunities */}
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-4">
+            <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+              <Zap className="w-5 h-5 text-amber-500" />
+              <h3 className="font-extrabold text-base text-slate-900">Conversion Growth Opportunities</h3>
+            </div>
+            <div className="space-y-3">
+              {report.weaknesses.map((w, idx) => (
+                <div key={idx} className="flex items-start gap-3 p-3 rounded-xl bg-amber-50/60 border border-amber-100 text-xs text-amber-950 leading-relaxed font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
+                  <span>{w}</span>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         </div>
 
-        {/* Pricing Recommendations Table */}
-        <div className="bg-white p-6 border border-[#070707]/10 space-y-4">
-          <h3 className="font-serif font-bold text-[#070707] text-lg flex items-center gap-2">
-            <Zap className="w-5 h-5 text-[#EF6F79]" /> AI Dynamic Pricing Recommendations
-          </h3>
+        {/* Pricing Suggestions */}
+        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-5">
+          <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+            <TrendingUp className="w-5 h-5 text-blue-600" />
+            <h3 className="font-extrabold text-base text-slate-900">AI Dynamic Price Recommendations</h3>
+          </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-[#F1F1ED] furniture-subtitle text-[10px] text-[#070707]/60 border-b border-[#070707]/10">
-                <tr>
-                  <th className="py-3 px-4">LISTING PRODUCT</th>
-                  <th className="py-3 px-4">CURRENT PRICE</th>
-                  <th className="py-3 px-4">AI OPTIMAL PRICE</th>
-                  <th className="py-3 px-4">AI MARKET RATIONALE</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#070707]/10">
-                {report.pricingRecommendations.map((rec, idx) => (
-                  <tr key={idx} className="hover:bg-[#F7F7F4]">
-                    <td className="py-3.5 px-4 font-serif font-bold text-[#070707]">{rec.product}</td>
-                    <td className="py-3.5 px-4 font-mono text-[#070707]/70">{formatCredits(rec.currentPrice)}</td>
-                    <td className="py-3.5 px-4 font-mono font-bold text-[#EF6F79] text-sm">{formatCredits(rec.recommendedPrice)}</td>
-                    <td className="py-3.5 px-4 text-[#070707]/80">{rec.logic}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {report.pricingRecommendations.map((pr, idx) => (
+              <div key={idx} className="p-5 rounded-xl border border-slate-200 bg-slate-50/60 space-y-3">
+                <h4 className="font-bold text-sm text-slate-900">{pr.product}</h4>
+                <div className="flex items-center gap-3 text-xs font-mono">
+                  <span className="text-slate-500">Current: <strong className="text-slate-700">{formatCredits(pr.currentPrice)}</strong></span>
+                  <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="text-emerald-700 font-bold">Suggested: {formatCredits(pr.recommendedPrice)}</span>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">{pr.logic}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>

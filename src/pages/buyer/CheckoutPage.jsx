@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   ShieldCheck,
   Wallet,
@@ -7,7 +7,10 @@ import {
   ShoppingBag,
   AlertTriangle,
   Lock,
-  ArrowRight,
+  ArrowLeft,
+  CheckCircle2,
+  Truck,
+  Package,
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import productService from '../../services/productService'
@@ -18,13 +21,13 @@ import LoadingSpinner from '../../components/common/LoadingSpinner'
 import toast from 'react-hot-toast'
 
 const MOCK_CHECKOUT_PRODUCT = {
-  id: '1',
-  title: 'iPhone 15 Pro Max 256GB - Natural Titanium',
-  price: 950,
-  category: 'Electronics',
+  id: 1,
+  title: 'Apple MacBook Pro 16" M3 Max (36GB RAM / 1TB SSD)',
+  priceInCredits: 245000,
+  categoryName: 'Electronics',
   condition: 'LIKE_NEW',
-  images: ['https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=600&auto=format&fit=crop'],
-  seller: { id: 101, name: 'TechHub Deals', level: 'PLATINUM', rating: 4.9, trustScore: 99 },
+  primaryImageUrl: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=800&q=80',
+  seller: { id: 2, displayName: 'TechHub Official', sellerLevel: 'PLATINUM', averageRating: 5.0, isVerified: true },
 }
 
 export default function CheckoutPage() {
@@ -38,10 +41,10 @@ export default function CheckoutPage() {
 
   // Form State
   const [shippingAddress, setShippingAddress] = useState({
-    street: '123 Market St, Suite 400',
-    city: 'San Francisco',
-    state: 'CA',
-    zip: '94103',
+    street: '100 Feet Road, Indiranagar',
+    city: 'Bengaluru',
+    state: 'Karnataka',
+    zip: '560038',
   })
   const [deliveryMethod, setDeliveryMethod] = useState('LOCAL_PICKUP')
 
@@ -49,10 +52,13 @@ export default function CheckoutPage() {
     async function loadProduct() {
       setLoading(true)
       try {
-        refreshWallet()
+        if (refreshWallet) await refreshWallet()
         const res = await productService.getProductById(productId)
-        if (res.data) setProduct(res.data)
-        else setProduct(MOCK_CHECKOUT_PRODUCT)
+        if (res.data) {
+          setProduct(res.data)
+        } else {
+          setProduct(MOCK_CHECKOUT_PRODUCT)
+        }
       } catch {
         setProduct(MOCK_CHECKOUT_PRODUCT)
       } finally {
@@ -64,21 +70,27 @@ export default function CheckoutPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F7F7F4] flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <LoadingSpinner size="lg" />
       </div>
     )
   }
 
   const p = product || MOCK_CHECKOUT_PRODUCT
-  const itemPrice = p.price
-  const platformFee = Math.round(itemPrice * 0.05)
-  const deliveryFee = deliveryMethod === 'ESCROW_EXPRESS' ? 15 : 0
+  const itemPrice = Number(p.priceInCredits ?? p.price ?? 0)
+  const platformFee = Math.max(2, Math.round(itemPrice * 0.02))
+  const deliveryFee = deliveryMethod === 'ESCROW_EXPRESS' ? 25 : 0
   const totalCost = itemPrice + platformFee + deliveryFee
-  const hasSufficientBalance = (walletBalance || 0) >= totalCost
+  const currentBalance = Number(walletBalance || 0)
+  const hasSufficientBalance = currentBalance >= totalCost
 
   const handleConfirmPurchase = async (e) => {
     e.preventDefault()
+
+    if (!shippingAddress.street.trim() || !shippingAddress.city.trim()) {
+      toast.error('Please enter a valid street address and city.')
+      return
+    }
 
     if (!hasSufficientBalance) {
       toast.error('Insufficient wallet balance to cover total MC cost.')
@@ -87,101 +99,145 @@ export default function CheckoutPage() {
 
     setSubmitting(true)
     try {
+      const fullAddress = `${shippingAddress.street.trim()}, ${shippingAddress.city.trim()}, ${shippingAddress.state.trim()} ${shippingAddress.zip.trim()}`
+      const idempotencyKey = typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `ord-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+
       await orderService.createOrder({
-        productId: p.id,
+        productId: Number(p.id),
         quantity: 1,
-        shippingAddress: `${shippingAddress.street}, ${shippingAddress.city}, ${shippingAddress.state} ${shippingAddress.zip}`,
-        paymentMethod: 'MARKETPLACE_CREDITS',
+        deliveryAddress: fullAddress,
+        notes: `Delivery Method: ${deliveryMethod === 'ESCROW_EXPRESS' ? 'Escrow Insured Courier' : 'Local In-Person Verified Exchange'}`,
+        idempotencyKey,
       })
-      toast.success('Order placed successfully! Funds locked in escrow.')
+
+      if (refreshWallet) await refreshWallet()
+      toast.success('Escrow purchase authorized! Funds safely locked.')
       navigate('/buyer/orders')
-    } catch {
-      toast.success('Order placed successfully! Funds locked in escrow.')
-      navigate('/buyer/orders')
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Unable to place order'
+      toast.error(msg)
     } finally {
       setSubmitting(false)
     }
   }
 
+  const productImage = p.primaryImageUrl || p.images?.[0]?.url || p.images?.[0] || MOCK_CHECKOUT_PRODUCT.primaryImageUrl
+
   return (
-    <div className="min-h-screen bg-[#F7F7F4] text-[#070707] pb-16">
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-16 font-sans">
       <DemoDisclaimer />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-        <div className="border-b border-[#070707]/10 pb-6">
-          <span className="furniture-subtitle text-xs text-[#EF6F79]">ESCROW CHECKOUT</span>
-          <h1 className="font-serif text-3xl text-[#070707] mt-1 flex items-center gap-3">
-            <Lock className="w-7 h-7 text-[#EF6F79]" /> Escrow Purchase Checkout
-          </h1>
-          <p className="text-xs text-[#070707]/60 mt-1">
-            Review offer metrics and authorize Marketplace Credits (MC) release into platform escrow.
-          </p>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* Navigation Breadcrumb */}
+        <div className="flex items-center justify-between">
+          <Link
+            to={productId ? `/products/${productId}` : '/search'}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Return to Listing</span>
+          </Link>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
+            <Lock className="w-3.5 h-3.5 text-emerald-600" />
+            100% Encrypted Escrow Vault
+          </span>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Column: Form & Address Details */}
+        {/* Page Header */}
+        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-xs">
+          <div className="max-w-3xl">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2.5">
+              <span>Escrow Checkout Authorization</span>
+            </h1>
+            <p className="text-sm text-slate-600 mt-1.5 leading-relaxed">
+              Authorize locking marketplace credits into Nexora Smart Escrow. Funds are never released to the merchant until you receive, inspect, and confirm delivery.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
+          {/* Left Column: Product Info & Delivery Form */}
           <div className="lg:col-span-7 space-y-6">
-            {/* Product Summary Preview Card */}
-            <div className="bg-white p-6 border border-[#070707]/10 flex gap-5 items-center">
+            {/* Product Card Preview */}
+            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex gap-5 items-center">
               <img
-                src={p.images?.[0] || MOCK_CHECKOUT_PRODUCT.images[0]}
-                alt=""
-                className="w-20 h-20 object-cover bg-[#F1F1ED] border border-[#070707]/10 shrink-0"
+                src={productImage}
+                alt={p.title}
+                className="w-24 h-24 rounded-xl object-cover bg-slate-100 border border-slate-200 shrink-0"
               />
-              <div>
-                <span className="furniture-subtitle text-[10px] text-[#EF6F79]">
-                  {p.category}
+              <div className="min-w-0 flex-1">
+                <span className="inline-block px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[11px] font-bold uppercase tracking-wider mb-1">
+                  {p.categoryName || p.category || 'Classified'}
                 </span>
-                <h3 className="font-serif font-bold text-[#070707] text-base mt-0.5">{p.title}</h3>
-                <p className="text-xs text-[#070707]/60 mt-1">Seller: {p.seller?.name || 'Verified Store'}</p>
+                <h3 className="font-bold text-slate-900 text-base sm:text-lg truncate">{p.title}</h3>
+                <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
+                  <span>Merchant: <strong className="text-slate-700">{p.seller?.displayName || p.seller?.name || 'Verified Seller'}</strong></span>
+                  <span>•</span>
+                  <span className="text-emerald-700 font-semibold">KYC Verified</span>
+                </div>
               </div>
             </div>
 
             {/* Delivery Method Selection */}
-            <div className="bg-white p-6 border border-[#070707]/10 space-y-5">
-              <h3 className="font-serif font-bold text-lg text-[#070707] flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-[#EF6F79]" /> Delivery Selection
+            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-5">
+              <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-rose-600" />
+                <span>Select Fulfillment Option</span>
               </h3>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <button
                   type="button"
                   onClick={() => setDeliveryMethod('LOCAL_PICKUP')}
-                  className={`p-4 border text-left transition-all ${
+                  className={`p-4 rounded-xl border text-left transition-all ${
                     deliveryMethod === 'LOCAL_PICKUP'
-                      ? 'border-[#070707] bg-[#F1F1ED]'
-                      : 'border-[#070707]/10 bg-white hover:bg-[#F7F7F4]'
+                      ? 'border-slate-900 bg-slate-900/5 ring-1 ring-slate-900'
+                      : 'border-slate-200 bg-white hover:bg-slate-50'
                   }`}
                 >
-                  <span className="furniture-subtitle text-xs text-[#070707] block">LOCAL IN-PERSON PICKUP</span>
-                  <span className="text-xs text-[#070707]/60 block mt-1">Free • Public verified exchange spot</span>
-                  <span className="text-xs font-mono font-bold text-[#070707] mt-3 block">0 MC</span>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-bold text-xs text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
+                      <Package className="w-4 h-4 text-slate-700" />
+                      Local Pickup
+                    </span>
+                    <span className="font-mono text-xs font-bold text-emerald-700">0 MC</span>
+                  </div>
+                  <p className="text-xs text-slate-500">Meet seller at verified public exchange safe point.</p>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setDeliveryMethod('ESCROW_EXPRESS')}
-                  className={`p-4 border text-left transition-all ${
+                  className={`p-4 rounded-xl border text-left transition-all ${
                     deliveryMethod === 'ESCROW_EXPRESS'
-                      ? 'border-[#070707] bg-[#F1F1ED]'
-                      : 'border-[#070707]/10 bg-white hover:bg-[#F7F7F4]'
+                      ? 'border-slate-900 bg-slate-900/5 ring-1 ring-slate-900'
+                      : 'border-slate-200 bg-white hover:bg-slate-50'
                   }`}
                 >
-                  <span className="furniture-subtitle text-xs text-[#070707] block">ESCROW COURIER EXPRESS</span>
-                  <span className="text-xs text-[#070707]/60 block mt-1">Tracked insured courier dispatch</span>
-                  <span className="text-xs font-mono font-bold text-[#EF6F79] mt-3 block">15 MC</span>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-bold text-xs text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
+                      <Truck className="w-4 h-4 text-rose-600" />
+                      Escrow Express
+                    </span>
+                    <span className="font-mono text-xs font-bold text-slate-900">25 MC</span>
+                  </div>
+                  <p className="text-xs text-slate-500">Tracked, insured direct door-to-door courier.</p>
                 </button>
               </div>
 
-              {/* Delivery Address Inputs */}
+              {/* Delivery Address Form */}
               <div className="pt-2 space-y-3">
-                <label className="furniture-subtitle text-[10px] text-[#070707]/60 block">DESTINATION / PICKUP ADDRESS</label>
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
+                  Delivery Destination / Meeting Point
+                </label>
                 <input
                   type="text"
                   value={shippingAddress.street}
                   onChange={(e) => setShippingAddress({ ...shippingAddress, street: e.target.value })}
-                  placeholder="Street Address"
-                  className="w-full px-4 py-3 bg-[#F1F1ED] border border-[#070707]/10 text-xs outline-none focus:border-[#070707]"
+                  placeholder="Street Address or Public Safe Point Location"
+                  className="w-full px-4 py-2.5 rounded-lg bg-slate-50 border border-slate-300 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition-all"
                 />
                 <div className="grid grid-cols-3 gap-3">
                   <input
@@ -189,83 +245,91 @@ export default function CheckoutPage() {
                     value={shippingAddress.city}
                     onChange={(e) => setShippingAddress({ ...shippingAddress, city: e.target.value })}
                     placeholder="City"
-                    className="w-full px-3 py-2.5 bg-[#F1F1ED] border border-[#070707]/10 text-xs outline-none focus:border-[#070707]"
+                    className="w-full px-3 py-2.5 rounded-lg bg-slate-50 border border-slate-300 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition-all"
                   />
                   <input
                     type="text"
                     value={shippingAddress.state}
                     onChange={(e) => setShippingAddress({ ...shippingAddress, state: e.target.value })}
                     placeholder="State"
-                    className="w-full px-3 py-2.5 bg-[#F1F1ED] border border-[#070707]/10 text-xs outline-none focus:border-[#070707]"
+                    className="w-full px-3 py-2.5 rounded-lg bg-slate-50 border border-slate-300 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition-all"
                   />
                   <input
                     type="text"
                     value={shippingAddress.zip}
                     onChange={(e) => setShippingAddress({ ...shippingAddress, zip: e.target.value })}
-                    placeholder="Zip Code"
-                    className="w-full px-3 py-2.5 bg-[#F1F1ED] border border-[#070707]/10 text-xs outline-none focus:border-[#070707]"
+                    placeholder="Postal Code"
+                    className="w-full px-3 py-2.5 rounded-lg bg-slate-50 border border-slate-300 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition-all"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Escrow Disclaimer Box */}
-            <div className="bg-[#F3D6DC]/40 p-5 border border-[#EF6F79]/30 text-[#070707] text-xs space-y-2">
-              <div className="flex items-center gap-2 font-bold text-[#070707] text-xs">
-                <ShieldCheck className="w-5 h-5 text-[#EF6F79] shrink-0" />
-                <span className="furniture-subtitle text-xs">NEXORA ESCROW PROTECTION GUARANTEE</span>
+            {/* Escrow Guarantee Callout */}
+            <div className="bg-emerald-50 rounded-2xl p-5 border border-emerald-200 text-emerald-950 space-y-2">
+              <div className="flex items-center gap-2 font-bold text-xs text-emerald-900 uppercase tracking-wide">
+                <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
+                <span>Nexora Zero-Risk Escrow Guarantee</span>
               </div>
-              <p className="leading-relaxed text-[#070707]/80">
-                Your payment of <strong className="font-mono font-bold text-[#070707]">{formatCredits(totalCost)}</strong> will be locked in platform escrow. The seller receives no credits until you inspect the item and click <strong>"Confirm Delivery"</strong> in your account.
+              <p className="text-xs text-emerald-800 leading-relaxed">
+                Your payment of <strong className="font-mono font-bold text-emerald-950">{formatCredits(totalCost)}</strong> remains in cold platform escrow. The seller only receives payout after you inspect the product and tap <strong>"Confirm Delivery"</strong>. If an issue occurs, full credits are refunded immediately.
               </p>
             </div>
           </div>
 
           {/* Right Column: Order Calculation & Wallet Summary */}
           <div className="lg:col-span-5 space-y-6">
-            <div className="bg-white p-6 border border-[#070707]/10 space-y-6">
-              <h3 className="font-serif font-bold text-lg text-[#070707] pb-3 border-b border-[#070707]/10">Order Financial Breakdown</h3>
+            <div className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200 shadow-xs space-y-6">
+              <h3 className="font-bold text-base text-slate-900 pb-3 border-b border-slate-100">
+                Payment Summary
+              </h3>
 
-              {/* Cost Breakdown List */}
+              {/* Cost Breakdown */}
               <div className="space-y-3 text-xs">
-                <div className="flex justify-between text-[#070707]/70">
-                  <span>Item Offer Price</span>
-                  <span className="font-mono font-bold text-[#070707]">{formatCredits(itemPrice)}</span>
+                <div className="flex justify-between text-slate-600">
+                  <span>Item Agreed Price</span>
+                  <span className="font-mono font-bold text-slate-900">{formatCredits(itemPrice)}</span>
                 </div>
 
-                <div className="flex justify-between text-[#070707]/70">
-                  <span>Platform Escrow Fee (5%)</span>
-                  <span className="font-mono font-bold text-[#070707]">{formatCredits(platformFee)}</span>
+                <div className="flex justify-between text-slate-600">
+                  <span>Platform Protection Fee (Escrow)</span>
+                  <span className="font-mono font-bold text-slate-900">{formatCredits(platformFee)}</span>
                 </div>
 
                 {deliveryFee > 0 && (
-                  <div className="flex justify-between text-[#070707]/70">
-                    <span>Courier Express Fee</span>
-                    <span className="font-mono font-bold text-[#070707]">{formatCredits(deliveryFee)}</span>
+                  <div className="flex justify-between text-slate-600">
+                    <span>Express Insured Courier</span>
+                    <span className="font-mono font-bold text-slate-900">{formatCredits(deliveryFee)}</span>
                   </div>
                 )}
 
-                <div className="pt-4 border-t border-[#070707]/10 flex justify-between items-center">
-                  <span className="furniture-subtitle text-xs text-[#070707]">TOTAL MC REQUIRED</span>
-                  <span className="text-2xl font-mono font-bold text-[#EF6F79]">{formatCredits(totalCost)}</span>
+                <div className="pt-4 border-t border-slate-200 flex justify-between items-baseline">
+                  <span className="text-xs font-bold text-slate-900 uppercase tracking-wide">Total Locked</span>
+                  <span className="text-2xl font-mono font-extrabold text-slate-900">{formatCredits(totalCost)}</span>
                 </div>
               </div>
 
-              {/* Wallet Balance Check Widget */}
-              <div className="p-4 bg-[#F1F1ED] border border-[#070707]/10 space-y-2">
+              {/* Wallet Balance Widget */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="furniture-subtitle text-[10px] text-[#070707]/70 flex items-center gap-1.5">
-                    <Wallet className="w-4 h-4 text-[#EF6F79]" /> WALLET BALANCE:
+                  <span className="font-semibold text-slate-600 flex items-center gap-1.5">
+                    <Wallet className="w-4 h-4 text-slate-700" />
+                    Available Balance:
                   </span>
-                  <span className={`font-mono font-bold text-sm ${hasSufficientBalance ? 'text-[#070707]' : 'text-red-600'}`}>
-                    {formatCredits(walletBalance || 0)}
+                  <span className={`font-mono font-bold text-sm ${hasSufficientBalance ? 'text-slate-900' : 'text-rose-600'}`}>
+                    {formatCredits(currentBalance)}
                   </span>
                 </div>
 
-                {!hasSufficientBalance && (
-                  <div className="pt-2 text-[11px] text-red-600 font-medium flex items-center gap-1">
+                {!hasSufficientBalance ? (
+                  <div className="pt-2 text-xs text-rose-600 font-medium flex items-center gap-1.5">
                     <AlertTriangle className="w-4 h-4 shrink-0" />
-                    <span>Insufficient balance. Top-up credits in dashboard to proceed.</span>
+                    <span>Insufficient MC balance. Please add credits before checkout.</span>
+                  </div>
+                ) : (
+                  <div className="text-[11px] text-emerald-700 font-medium flex items-center gap-1 pt-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Remaining after escrow lock: {formatCredits(currentBalance - totalCost)}</span>
                   </div>
                 )}
               </div>
@@ -275,10 +339,10 @@ export default function CheckoutPage() {
                 type="button"
                 onClick={handleConfirmPurchase}
                 disabled={submitting || !hasSufficientBalance}
-                className="w-full py-4 bg-[#070707] hover:bg-[#EF6F79] disabled:opacity-50 text-white font-bold furniture-subtitle transition-all flex items-center justify-center gap-2 text-xs"
+                className="w-full py-4 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold transition-all shadow-sm flex items-center justify-center gap-2 text-xs sm:text-sm tracking-wide"
               >
                 <ShoppingBag className="w-4 h-4" />
-                <span>{submitting ? 'LOCKING FUNDS IN ESCROW...' : 'CONFIRM ESCROW PURCHASE'}</span>
+                <span>{submitting ? 'Locking Escrow Funds...' : 'Authorize Escrow Order'}</span>
               </button>
             </div>
           </div>

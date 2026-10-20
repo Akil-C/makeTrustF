@@ -64,18 +64,18 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-plaster text-near-black flex flex-col justify-between">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col justify-between font-sans">
       <Navbar />
 
-      <main className="py-16 px-4 sm:px-6 lg:px-8 my-auto">
-        <DemoDisclaimer className="max-w-md mx-auto mb-8" />
+      <main className="py-12 px-4 sm:px-6 lg:px-8 my-auto">
+        <DemoDisclaimer className="max-w-md mx-auto mb-6" />
 
-        <div className="max-w-md mx-auto space-y-8 bg-white p-8 sm:p-10 rounded-2xl shadow-sm border border-slate-200">
+        <div className="max-w-md mx-auto space-y-6 bg-white p-8 sm:p-10 rounded-2xl shadow-xs border border-slate-200">
           
           {/* Header */}
-          <div className="text-center space-y-2">
-            <div className="text-xs font-bold text-rose-600 uppercase tracking-wider">Authentication Portal</div>
-            <h1 className="font-bodoni text-2xl sm:text-3xl font-extrabold uppercase tracking-tight text-slate-900">
+          <div className="text-center space-y-1.5">
+            <span className="text-xs font-bold text-rose-600 uppercase tracking-wider block">Authentication Portal</span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
               Sign In to Nexora
             </h1>
             <p className="text-xs text-slate-600">
@@ -175,27 +175,27 @@ export default function LoginPage() {
           </form>
 
           {/* Quick Demo Credentials */}
-          <div className="pt-6 hairline-t border-near-black/10 text-center">
-            <div className="furniture-text text-[10px] text-near-black/50 mb-3">QUICK DEMO ACCESSS</div>
+          <div className="pt-6 border-t border-slate-200 text-center">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-3">ONE-CLICK DEMO LOGIN</span>
             <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={() => { setEmail('buyer1@demo.com'); setPassword('Buyer@123!'); setCaptchaVerified(true); }}
-                className="py-2 bg-plaster hover:bg-near-black hover:text-white border border-near-black/15 furniture-text text-[10px] text-near-black transition-colors"
+                className="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold transition-colors border border-slate-200"
               >
                 BUYER
               </button>
               <button
                 type="button"
                 onClick={() => { setEmail('seller1@demo.com'); setPassword('Seller@123!'); setCaptchaVerified(true); }}
-                className="py-2 bg-plaster hover:bg-near-black hover:text-white border border-near-black/15 furniture-text text-[10px] text-near-black transition-colors"
+                className="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold transition-colors border border-slate-200"
               >
                 SELLER
               </button>
               <button
                 type="button"
                 onClick={() => { setEmail('admin@markettrust.com'); setPassword('Admin@123!'); setCaptchaVerified(true); }}
-                className="py-2 bg-accent text-white hover:bg-near-black furniture-text text-[10px] transition-colors"
+                className="py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition-colors shadow-xs"
               >
                 ADMIN
               </button>

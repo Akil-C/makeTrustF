@@ -12,6 +12,7 @@ import {
   Calendar,
   ArrowUpRight,
   MapPin,
+  TrendingUp,
 } from 'lucide-react'
 import sellerService from '../../services/sellerService'
 import reviewService from '../../services/reviewService'
@@ -25,60 +26,24 @@ import LoadingSpinner from '../../components/common/LoadingSpinner'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
 
 const MOCK_PROFILE = {
-  id: 101,
-  displayName: 'TechHub Deals',
-  bio: 'Specializing in certified pre-owned tech, Apple hardware, and high-end audio gear. Fast local dispatch & 100% escrow guaranteed.',
+  id: 2,
+  displayName: 'TechHub Official',
+  bio: 'Specializing in verified pre-owned electronics, Apple workstations, and professional camera equipment. 100% verified fulfillment.',
   profileImageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop',
   sellerLevel: 'PLATINUM',
   trustScore: 99,
-  averageRating: 4.9,
-  reviewCount: 88,
-  completedOrders: 142,
+  averageRating: 5.0,
+  reviewCount: 24,
+  completedOrders: 126,
   responseRate: 98,
   isVerified: true,
 }
 
-const MOCK_PRODUCTS = [
-  {
-    id: 1,
-    title: 'iPhone 15 Pro Max 256GB — Natural Titanium',
-    priceInCredits: 950,
-    category: 'Electronics',
-    condition: 'LIKE_NEW',
-    primaryImageUrl: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=600&auto=format&fit=crop',
-  },
-  {
-    id: 3,
-    title: 'MacBook Air M2 16GB / 512GB Space Gray',
-    priceInCredits: 1100,
-    category: 'Electronics',
-    condition: 'LIKE_NEW',
-    primaryImageUrl: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&auto=format&fit=crop',
-  },
-]
-
-const MOCK_REVIEWS = [
-  {
-    id: 'r1',
-    buyerName: 'David K.',
-    rating: 5,
-    createdAt: '2026-09-28',
-    comment: 'Super fast delivery and device was in immaculate condition. Will definitely buy from TechHub again!',
-  },
-  {
-    id: 'r2',
-    buyerName: 'Elena R.',
-    rating: 5,
-    createdAt: '2026-09-15',
-    comment: 'Great communication. Escrow process was smooth and item matched description perfectly.',
-  },
-]
-
 export default function SellerProfilePage() {
   const { id } = useParams()
   const [profile, setProfile] = useState(null)
-  const [products, setProducts] = useState(MOCK_PRODUCTS)
-  const [reviews, setReviews] = useState(MOCK_REVIEWS)
+  const [products, setProducts] = useState([])
+  const [reviews, setReviews] = useState([])
   const [activeTab, setActiveTab] = useState('products')
   const [loading, setLoading] = useState(true)
 
@@ -86,18 +51,20 @@ export default function SellerProfilePage() {
     async function loadData() {
       setLoading(true)
       try {
-        const [profRes, prodRes, revRes] = await Promise.allSettled([
+        const [profRes, revRes] = await Promise.allSettled([
           sellerService.getSellerProfile(id),
-          sellerService.getSellerPublicProducts(id),
           reviewService.getSellerReviews(id),
         ])
 
-        if (profRes.status === 'fulfilled' && profRes.value.data) setProfile(profRes.value.data)
-        else setProfile(MOCK_PROFILE)
+        if (profRes.status === 'fulfilled' && profRes.value.data) {
+          setProfile(profRes.value.data)
+        } else {
+          setProfile(MOCK_PROFILE)
+        }
 
-        if (prodRes.status === 'fulfilled' && prodRes.value.data?.content) setProducts(prodRes.value.data.content)
-
-        if (revRes.status === 'fulfilled' && revRes.value.data?.content) setReviews(revRes.value.data.content)
+        if (revRes.status === 'fulfilled' && revRes.value.data?.content) {
+          setReviews(revRes.value.data.content)
+        }
       } catch {
         setProfile(MOCK_PROFILE)
       } finally {
@@ -110,7 +77,7 @@ export default function SellerProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-plaster flex flex-col justify-between">
+      <div className="min-h-screen bg-slate-50 flex flex-col justify-between font-sans">
         <Navbar />
         <div className="py-24 flex justify-center my-auto">
           <LoadingSpinner size="lg" />
@@ -123,126 +90,143 @@ export default function SellerProfilePage() {
   const p = profile || MOCK_PROFILE
 
   return (
-    <div className="min-h-screen bg-plaster text-near-black flex flex-col justify-between">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col justify-between font-sans">
       <Navbar />
 
-      <main className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-10">
+      <main className="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-6 flex-1">
         <DemoDisclaimer />
 
-        {/* Seller Editorial Profile Header */}
-        <div className="bg-paper p-8 md:p-10 hairline-all space-y-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 hairline-b border-near-black/15 pb-8">
-            <div className="flex items-center gap-5">
+        {/* Merchant Header Card */}
+        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-slate-100">
+            <div className="flex items-center gap-4 sm:gap-5">
               <img
                 src={p.profileImageUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop'}
                 alt=""
-                className="w-20 h-20 object-cover hairline-all shrink-0"
+                className="w-20 h-20 rounded-2xl object-cover border border-slate-200 shadow-xs shrink-0"
               />
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <h1 className="font-bodoni font-bold text-2xl sm:text-3xl text-near-black uppercase">
+                  <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                     {p.displayName || p.name || 'Verified Merchant'}
                   </h1>
-                  <VerifiedBadge />
+                  {p.isVerified && <VerifiedBadge />}
                 </div>
-                <div className="furniture-text text-accent text-xs">
-                  VERIFIED NEXORA MERCHANT
+                <div className="text-xs text-slate-500 flex items-center gap-2">
+                  <span className="flex items-center gap-1 font-semibold text-emerald-700">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    Government KYC Verified
+                  </span>
+                  <span>•</span>
+                  <span>{p.city || 'Bengaluru, India'}</span>
                 </div>
               </div>
             </div>
 
-            <SellerLevelBadge level={p.sellerLevel || 'PLATINUM'} />
+            <div className="flex items-center gap-3">
+              <SellerLevelBadge level={p.sellerLevel || 'PLATINUM'} />
+              <Link
+                to={`/buyer/chat`}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all shadow-xs"
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span>Message Store</span>
+              </Link>
+            </div>
           </div>
 
-          <p className="text-sm text-near-black/75 font-light leading-relaxed max-w-3xl">
-            {p.bio}
+          <p className="text-sm text-slate-600 leading-relaxed max-w-3xl">
+            {p.bio || 'Verified storefront on Nexora Marketplace. All orders insured by platform escrow vault protection.'}
           </p>
 
-          {/* Stats Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-            <div className="p-4 bg-plaster hairline-all">
-              <div className="furniture-text text-[9px] text-near-black/50">TRUST SCORE</div>
-              <div className="font-bodoni text-2xl font-bold text-accent">{p.trustScore || 99} / 100</div>
+          {/* 4 Stats Pills */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Trust Score</span>
+              <span className="text-2xl font-mono font-extrabold text-emerald-700 mt-0.5 block">{p.trustScore || 99} / 100</span>
             </div>
-            <div className="p-4 bg-plaster hairline-all">
-              <div className="furniture-text text-[9px] text-near-black/50">AVERAGE RATING</div>
-              <div className="font-bodoni text-2xl font-bold text-near-black">{p.averageRating || 4.9} ★</div>
+
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Completed Escrows</span>
+              <span className="text-2xl font-mono font-extrabold text-slate-900 mt-0.5 block">{p.completedOrders || 126}</span>
             </div>
-            <div className="p-4 bg-plaster hairline-all">
-              <div className="furniture-text text-[9px] text-near-black/50">COMPLETED ORDERS</div>
-              <div className="font-bodoni text-2xl font-bold text-near-black">{p.completedOrders || 142}</div>
+
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Customer Rating</span>
+              <span className="text-2xl font-mono font-extrabold text-slate-900 mt-0.5 block flex items-center gap-1">
+                <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
+                {(p.averageRating || 5.0).toFixed(1)}
+              </span>
             </div>
-            <div className="p-4 bg-plaster hairline-all">
-              <div className="furniture-text text-[9px] text-near-black/50">RESPONSE RATE</div>
-              <div className="font-bodoni text-2xl font-bold text-green-700">{p.responseRate || 98}%</div>
+
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Response Velocity</span>
+              <span className="text-2xl font-mono font-extrabold text-slate-900 mt-0.5 block">{p.responseRate || 98}%</span>
             </div>
           </div>
         </div>
 
-        {/* Tab Selection */}
-        <div className="flex items-center gap-4 hairline-b border-near-black/15 pb-2">
-          <button
-            onClick={() => setActiveTab('products')}
-            className={`furniture-text pb-2 px-1 text-sm border-b-2 transition-colors ${
-              activeTab === 'products' ? 'border-accent text-accent font-bold' : 'border-transparent text-near-black/60 hover:text-near-black'
-            }`}
-          >
-            ACTIVE LISTINGS ({products.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('reviews')}
-            className={`furniture-text pb-2 px-1 text-sm border-b-2 transition-colors ${
-              activeTab === 'reviews' ? 'border-accent text-accent font-bold' : 'border-transparent text-near-black/60 hover:text-near-black'
-            }`}
-          >
-            VERIFIED REVIEWS ({reviews.length})
-          </button>
-        </div>
+        {/* Tabs & Content */}
+        <div className="space-y-4">
+          <div className="flex border-b border-slate-200 gap-4">
+            <button
+              type="button"
+              onClick={() => setActiveTab('products')}
+              className={`pb-3 text-xs sm:text-sm font-bold tracking-wide transition-all border-b-2 ${
+                activeTab === 'products'
+                  ? 'border-slate-900 text-slate-900'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              Active Store Listings
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('reviews')}
+              className={`pb-3 text-xs sm:text-sm font-bold tracking-wide transition-all border-b-2 ${
+                activeTab === 'reviews'
+                  ? 'border-slate-900 text-slate-900'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              Customer Reviews ({reviews.length})
+            </button>
+          </div>
 
-        {/* Tab Contents */}
-        {activeTab === 'products' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {products.map((prod) => (
-              <div key={prod.id} className="group bg-paper hairline-all flex flex-col justify-between">
-                <div className="aspect-square bg-plaster overflow-hidden">
-                  <img
-                    src={prod.primaryImageUrl || prod.images?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop'}
-                    alt={prod.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
+          {activeTab === 'products' ? (
+            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs text-center text-slate-500 text-xs sm:text-sm py-12">
+              <Package className="w-10 h-10 text-slate-400 mx-auto mb-2 opacity-80" />
+              <p className="font-bold text-slate-800">Browse Full Catalog</p>
+              <p className="text-slate-500 text-xs mt-1">Explore all verified listings from this seller on the discovery page.</p>
+              <Link
+                to="/search"
+                className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-colors"
+              >
+                <span>View Products in Catalog</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {reviews.length === 0 ? (
+                <div className="bg-white rounded-2xl p-12 border border-slate-200 text-center text-slate-500 text-sm">
+                  No verified customer reviews published yet.
                 </div>
-                <div className="p-5 space-y-3">
-                  <h3 className="font-bodoni font-medium text-base text-near-black line-clamp-1 group-hover:text-accent transition-colors">
-                    {prod.title}
-                  </h3>
-                  <div className="flex items-center justify-between pt-2 hairline-t border-near-black/10">
-                    <span className="font-bodoni font-bold text-accent text-lg">
-                      {formatCredits(prod.priceInCredits || prod.price)}
-                    </span>
-                    <Link to={`/products/${prod.id}`} className="furniture-text text-xs text-near-black hover:text-accent underline flex items-center gap-1">
-                      <span>VIEW</span>
-                      <ArrowUpRight className="w-3.5 h-3.5" />
-                    </Link>
+              ) : (
+                reviews.map((r) => (
+                  <div key={r.id} className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-xs text-slate-900">{r.buyer?.name || 'Verified Buyer'}</span>
+                      <span className="text-[11px] text-slate-400">{formatDate(r.createdAt)}</span>
+                    </div>
+                    <StarRating rating={r.rating} readOnly size="sm" />
+                    <p className="text-xs text-slate-700 leading-relaxed">{r.comment}</p>
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {reviews.map((rev) => (
-              <div key={rev.id} className="p-6 bg-paper hairline-all space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-bodoni font-bold text-near-black">{rev.buyerName}</span>
-                  <span className="furniture-text text-[10px] text-near-black/50">{rev.createdAt}</span>
-                </div>
-                <StarRating rating={rev.rating} />
-                <p className="font-light text-sm text-near-black/80 italic">“{rev.comment}”</p>
-              </div>
-            ))}
-          </div>
-        )}
-
+                ))
+              )}
+            </div>
+          )}
+        </div>
       </main>
 
       <Footer />

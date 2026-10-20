@@ -1,14 +1,14 @@
 import api from './api'
 
 const wishlistService = {
-  /** Get all wishlist items for the current buyer */
+  /** Get all wishlist items for current buyer */
   getWishlist: (params = {}) => api.get('/api/wishlist', { params }),
 
   /**
    * Add a product to the wishlist.
    * @param {string|number} productId
    */
-  addToWishlist: (productId) => api.post('/api/wishlist', { productId }),
+  addToWishlist: (productId) => api.post(`/api/wishlist/${productId}`),
 
   /**
    * Remove a product from the wishlist.
@@ -24,10 +24,6 @@ const wishlistService = {
 
   /** Clear the entire wishlist */
   clearWishlist: () => api.delete('/api/wishlist'),
-
-  /** Move wishlist item to cart / initiate checkout */
-  moveToCart: (productId) =>
-    api.post('/api/wishlist/move-to-cart', { productId }),
 }
 
 export default wishlistService

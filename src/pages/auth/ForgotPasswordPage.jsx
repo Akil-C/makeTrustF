@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Mail, ShieldCheck, ArrowLeft, CheckCircle2, AlertCircle, ArrowUpRight } from 'lucide-react'
+import { Mail, ArrowLeft, ArrowUpRight, CheckCircle2, AlertCircle } from 'lucide-react'
 import authService from '../../services/authService'
 import Navbar from '../../components/common/Navbar'
 import Footer from '../../components/common/Footer'
@@ -9,88 +9,91 @@ import toast from 'react-hot-toast'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
-  const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [submitted, setSubmitted] = useState(false)
+  const [error, setError] = useState(null)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setError('')
     if (!email) {
-      setError('Please provide your email address.')
+      setError('Please provide your account email.')
       return
     }
 
     setLoading(true)
+    setError(null)
+
     try {
       await authService.forgotPassword(email)
       setSubmitted(true)
-      toast.success('Password reset email sent!')
+      toast.success('Password reset instructions sent to your email!')
     } catch {
+      // In development / demo mode, display success
       setSubmitted(true)
-      toast.success('Password reset link sent to your email!')
+      toast.success('Password reset instructions sent to your email!')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-plaster text-near-black flex flex-col justify-between">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col justify-between font-sans">
       <Navbar />
 
-      <main className="py-16 px-4 sm:px-6 lg:px-8 my-auto">
-        <DemoDisclaimer className="max-w-md mx-auto mb-8" />
+      <main className="py-12 px-4 sm:px-6 lg:px-8 my-auto">
+        <DemoDisclaimer className="max-w-md mx-auto mb-6" />
 
-        <div className="max-w-md mx-auto space-y-8 bg-paper p-8 sm:p-10 hairline-all shadow-sm">
+        <div className="max-w-md mx-auto space-y-6 bg-white p-8 sm:p-10 rounded-2xl shadow-xs border border-slate-200">
           
-          <div className="text-center space-y-2">
-            <div className="furniture-text text-accent">PASSWORD RECOVERY</div>
-            <h1 className="font-bodoni text-3xl font-semibold uppercase tracking-tight text-near-black">
-              RESET YOUR PASSWORD
+          <div className="text-center space-y-1.5">
+            <span className="text-xs font-bold text-rose-600 uppercase tracking-wider block">Password Recovery</span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Reset Your Password
             </h1>
-            <p className="text-xs text-near-black/60 font-light">
+            <p className="text-xs text-slate-600">
               Enter your registered email address to receive recovery instructions.
             </p>
           </div>
 
           {submitted ? (
-            <div className="text-center space-y-4 pt-4">
-              <div className="w-12 h-12 bg-accent/10 text-accent hairline-all flex items-center justify-center mx-auto">
+            <div className="text-center space-y-4 pt-2">
+              <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mx-auto">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
-              <h3 className="font-bodoni text-xl font-bold uppercase text-near-black">CHECK YOUR INBOX</h3>
-              <p className="text-xs text-near-black/70 font-light leading-relaxed">
-                We've sent a password reset link to <span className="font-bold text-accent">{email}</span>.
+              <h3 className="text-lg font-bold text-slate-900">Check Your Inbox</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                We've sent a password reset token to <strong className="text-slate-900">{email}</strong>.
               </p>
               <Link
                 to="/login"
-                className="inline-flex items-center justify-center gap-2 mt-4 px-6 py-3 bg-near-black text-plaster hover:bg-accent furniture-text text-xs transition-colors"
+                className="inline-flex items-center justify-center gap-2 mt-4 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all shadow-xs"
               >
-                <ArrowLeft className="w-4 h-4" /> RETURN TO SIGN IN
+                <ArrowLeft className="w-4 h-4" />
+                <span>Return to Sign In</span>
               </Link>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="p-3 bg-accent/10 border border-accent/30 text-accent text-xs flex items-center gap-2">
+                <div className="p-3.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2 font-medium">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>{error}</span>
                 </div>
               )}
 
               <div>
-                <label className="block furniture-text text-near-black/70 mb-1.5">
-                  EMAIL ADDRESS
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                  Email Address
                 </label>
                 <div className="relative flex items-center">
-                  <Mail className="w-4 h-4 text-near-black/40 absolute left-3.5" />
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5" />
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@domain.com"
                     required
-                    className="w-full pl-10 pr-4 py-3 bg-plaster border border-near-black/20 focus:border-accent text-sm text-near-black placeholder-near-black/30 outline-none transition-colors"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-slate-50 border border-slate-300 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white"
                   />
                 </div>
               </div>
@@ -98,9 +101,9 @@ export default function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 bg-near-black text-plaster hover:bg-accent hover:text-white furniture-text transition-colors flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold text-xs sm:text-sm transition-all shadow-xs flex items-center justify-center gap-2"
               >
-                <span>{loading ? 'SENDING LINK...' : 'SEND RESET LINK'}</span>
+                <span>{loading ? 'Sending Instructions...' : 'Send Reset Link'}</span>
                 <ArrowUpRight className="w-4 h-4" />
               </button>
             </form>

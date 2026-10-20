@@ -2,65 +2,41 @@ import api from './api'
 
 const sellerService = {
   /**
-   * Get a public seller profile by ID.
+   * Get public seller profile by ID.
    * @param {string|number} sellerId
    */
-  getSellerProfile: (sellerId) => api.get(`/api/sellers/${sellerId}`),
+  getSellerProfile: (sellerId) => api.get(`/api/sellers/${sellerId}/public`),
 
-  /** Get current seller's own profile / store settings */
-  getMyProfile: () => api.get('/api/seller/profile'),
+  /** Get current seller's own profile */
+  getMyProfile: () => api.get('/api/sellers/me'),
 
   /**
-   * Update the seller's store profile.
-   * @param {object} data  { storeName, description, contactPhone, location, ... }
+   * Update seller profile
+   * @param {object} data
    */
-  updateProfile: (data) => api.put('/api/seller/profile', data),
+  updateProfile: (data) => api.put('/api/sellers/me', data),
 
   /**
-   * Upload a new store banner image.
-   * @param {File} file
-   */
-  uploadBanner: (file) => {
-    const form = new FormData()
-    form.append('banner', file)
-    return api.post('/api/seller/profile/banner', form, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
-  },
-
-  /**
-   * Submit or update KYC documents.
-   * @param {FormData} formData  Contains id_front, id_back, selfie, etc.
+   * Submit KYC documents.
+   * Spring expects `@RequestPart("data") SubmitKycRequest`, `@RequestPart("idDocument")`, `@RequestPart("selfie")`
+   * @param {FormData} formData
    */
   submitKYC: (formData) =>
-    api.post('/api/seller/kyc', formData, {
+    api.post('/api/sellers/me/kyc', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
 
   /** Get current KYC submission status */
-  getKYCStatus: () => api.get('/api/seller/kyc'),
+  getKYCStatus: () => api.get('/api/sellers/me/kyc'),
 
   /**
-   * Get seller analytics dashboard data.
-   * @param {{ period }} params  period: '7d' | '30d' | '90d' | '1y'
+   * Get top trusted sellers list
+   * @param {{ page, size }} params
    */
-  getAnalytics: (params = {}) =>
-    api.get('/api/seller/analytics', { params }),
+  getTrustedSellers: (params = {}) => api.get('/api/sellers/trusted', { params }),
 
-  /** Get seller-level info and requirements for next level */
-  getSellerLevel: () => api.get('/api/seller/level'),
-
-  /** Get public product list for a seller (for buyer-facing profile) */
-  getSellerPublicProducts: (sellerId, params = {}) =>
-    api.get(`/api/sellers/${sellerId}/products`, { params }),
-
-  /**
-   * Feature (boost) a product via ad credit.
-   * @param {string|number} productId
-   * @param {{ days }} data
-   */
-  boostProduct: (productId, data) =>
-    api.post(`/api/seller/products/${productId}/boost`, data),
+  /** Get seller-level info and requirements */
+  getSellerLevelInfo: () => api.get('/api/sellers/me/level'),
 }
 
 export default sellerService

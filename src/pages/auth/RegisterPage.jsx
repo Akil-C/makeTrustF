@@ -57,18 +57,18 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-plaster text-near-black flex flex-col justify-between">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col justify-between font-sans">
       <Navbar />
 
-      <main className="py-16 px-4 sm:px-6 lg:px-8 my-auto">
-        <DemoDisclaimer className="max-w-md mx-auto mb-8" />
+      <main className="py-12 px-4 sm:px-6 lg:px-8 my-auto">
+        <DemoDisclaimer className="max-w-md mx-auto mb-6" />
 
-        <div className="max-w-md mx-auto space-y-8 bg-white p-8 sm:p-10 rounded-2xl shadow-sm border border-slate-200">
+        <div className="max-w-md mx-auto space-y-6 bg-white p-8 sm:p-10 rounded-2xl shadow-xs border border-slate-200">
           
           {/* Header */}
-          <div className="text-center space-y-2">
-            <div className="text-xs font-bold text-rose-600 uppercase tracking-wider">Join The Marketplace</div>
-            <h1 className="font-bodoni text-2xl sm:text-3xl font-extrabold uppercase tracking-tight text-slate-900">
+          <div className="text-center space-y-1.5">
+            <span className="text-xs font-bold text-rose-600 uppercase tracking-wider block">Join The Marketplace</span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
               Create a Nexora Account
             </h1>
             <p className="text-xs text-slate-600">
