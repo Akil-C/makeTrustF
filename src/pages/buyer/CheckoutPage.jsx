@@ -75,7 +75,7 @@ export default function CheckoutPage() {
   const platformFee = Math.round(itemPrice * 0.05)
   const deliveryFee = deliveryMethod === 'ESCROW_EXPRESS' ? 15 : 0
   const totalCost = itemPrice + platformFee + deliveryFee
-  const hasSufficientBalance = (walletBalance || 5000) >= totalCost
+  const hasSufficientBalance = (walletBalance || 0) >= totalCost
 
   const handleConfirmPurchase = async (e) => {
     e.preventDefault()
@@ -258,7 +258,7 @@ export default function CheckoutPage() {
                     <Wallet className="w-4 h-4 text-[#EF6F79]" /> WALLET BALANCE:
                   </span>
                   <span className={`font-mono font-bold text-sm ${hasSufficientBalance ? 'text-[#070707]' : 'text-red-600'}`}>
-                    {formatCredits(walletBalance || 5000)}
+                    {formatCredits(walletBalance || 0)}
                   </span>
                 </div>
 

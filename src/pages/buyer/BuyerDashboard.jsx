@@ -118,21 +118,21 @@ export default function BuyerDashboard() {
             <div className="p-4 bg-plaster/5 hairline-all border-plaster/10 space-y-1">
               <div className="furniture-text text-plaster/50 text-[9px]">AVAILABLE BALANCE</div>
               <div className="font-bodoni text-3xl font-bold text-accent">
-                {formatCredits(wallet?.availableCredits || wallet?.balance || 12500)}
+                {formatCredits(wallet?.availableCredits ?? wallet?.balance ?? 0)}
               </div>
             </div>
 
             <div className="p-4 bg-plaster/5 hairline-all border-plaster/10 space-y-1">
               <div className="furniture-text text-plaster/50 text-[9px]">HELD IN ESCROW</div>
               <div className="font-bodoni text-3xl font-bold text-plaster">
-                {formatCredits(wallet?.heldCredits || 2400)}
+                {formatCredits(wallet?.heldCredits ?? 0)}
               </div>
             </div>
 
             <div className="p-4 bg-plaster/5 hairline-all border-plaster/10 space-y-1">
               <div className="furniture-text text-plaster/50 text-[9px]">TOTAL SPENT</div>
               <div className="font-bodoni text-3xl font-bold text-plaster/70">
-                {formatCredits(wallet?.totalSpent || 4850)}
+                {formatCredits(wallet?.totalSpent ?? 0)}
               </div>
             </div>
           </div>

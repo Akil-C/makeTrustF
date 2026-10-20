@@ -7,7 +7,7 @@ import { formatDistanceToNow, format, parseISO, isValid } from 'date-fns'
  * @returns {string}
  */
 export function formatCredits(amount) {
-  if (amount === null || amount === undefined) return '0 MC'
+  if (amount === null || amount === undefined || isNaN(Number(amount))) return '0 MC'
   return `${Number(amount).toLocaleString()} MC`
 }
 

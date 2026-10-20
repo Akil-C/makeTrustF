@@ -114,6 +114,7 @@ export function AuthProvider({ children }) {
       const token = localStorage.getItem('accessToken')
       if (!token) {
         setIsLoading(false)
+        setWalletBalance(0)
         return
       }
       // Check if token is still alive
@@ -132,6 +133,7 @@ export function AuthProvider({ children }) {
           localStorage.removeItem('refreshToken')
           localStorage.removeItem('user')
           setUser(null)
+          setWalletBalance(0)
           setIsLoading(false)
           return
         }
@@ -154,6 +156,7 @@ export function AuthProvider({ children }) {
           localStorage.removeItem('refreshToken')
           delete api.defaults.headers.common['Authorization']
           setUser(null)
+          setWalletBalance(0)
         }
       } finally {
         setIsLoading(false)
