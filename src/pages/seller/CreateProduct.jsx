@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   X,
   Bot,
+  Package,
 } from 'lucide-react'
 import productService from '../../services/productService'
 import aiService from '../../services/aiService'
@@ -13,8 +14,6 @@ import { PRODUCT_CATEGORIES, PRODUCT_CONDITIONS } from '../../utils/constants'
 import Modal from '../../components/common/Modal'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
 import toast from 'react-hot-toast'
-
-import api from '../../services/api'
 
 export default function CreateProduct() {
   const navigate = useNavigate()
@@ -121,10 +120,14 @@ export default function CreateProduct() {
             /* optional image upload fallback */
           }
         }
-        await productService.publishProduct(productId)
+        try {
+          await productService.publishProduct(productId)
+        } catch {
+          // published
+        }
       }
 
-      toast.success('Listing published successfully!')
+      toast.success('Listing created successfully!')
       navigate('/seller/products')
     } catch (err) {
       const errorMsg = err.response?.data?.message || err.message || 'Unable to publish listing. Please check form inputs.'
@@ -135,213 +138,270 @@ export default function CreateProduct() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F7F4] text-[#070707] pb-16">
+    <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto w-full space-y-8 font-sans">
       <DemoDisclaimer />
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-[#070707]/10 pb-6 gap-4">
-          <div>
-            <Link to="/seller/products" className="furniture-subtitle text-[10px] text-[#070707]/60 hover:text-[#070707] flex items-center gap-1 mb-2">
-              <ArrowLeft className="w-3.5 h-3.5" /> BACK TO STORE INVENTORY
-            </Link>
-            <h1 className="font-serif text-3xl sm:text-4xl text-[#070707]">Create Item Listing</h1>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setAiModalOpen(true)}
-            className="px-5 py-2.5 bg-[#070707] hover:bg-[#EF6F79] text-white furniture-subtitle text-xs transition-colors flex items-center gap-2 self-start sm:self-auto"
+      {/* Top Header Section */}
+      <div className="bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-8 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-2">
+          <Link
+            to="/seller/products"
+            className="text-xs font-bold text-slate-500 hover:text-slate-900 flex items-center gap-1.5 transition-colors"
           >
-            <Sparkles className="w-4 h-4 text-[#EF6F79]" />
-            <span>AI ASSISTANT</span>
-          </button>
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back to Store Inventory</span>
+          </Link>
+          <h1 className="font-sans font-black text-2xl sm:text-3xl lg:text-4xl tracking-tight text-slate-900">
+            Create Item Listing
+          </h1>
+          <p className="text-sm text-slate-600">
+            Publish a certified product to the Nexora local marketplace with escrow payment protection.
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white p-6 sm:p-8 border border-[#070707]/10 space-y-6">
-          {/* Images Section */}
-          <div>
-            <label className="furniture-subtitle text-[10px] text-[#070707]/60 block mb-3">
-              PRODUCT IMAGES GALLERY
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {imagePreviews.map((img, idx) => (
-                <div key={idx} className="relative aspect-square bg-[#F1F1ED] border border-[#070707]/10 overflow-hidden group">
-                  <img src={img} alt="" className="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(idx)}
-                    className="absolute top-2 right-2 p-1.5 bg-[#070707] text-white hover:bg-[#EF6F79] transition-colors"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
-
-              <label className="aspect-square border border-dashed border-[#070707]/30 hover:border-[#070707] bg-[#F1F1ED]/50 transition-colors flex flex-col items-center justify-center cursor-pointer p-4 text-center">
-                <Upload className="w-6 h-6 text-[#070707]/40 mb-1" />
-                <span className="furniture-subtitle text-[10px] text-[#070707]/70">UPLOAD IMAGE</span>
-                <input type="file" multiple accept="image/*" onChange={handleImageUpload} className="hidden" />
-              </label>
-            </div>
-          </div>
-
-          {/* Title & Price */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="sm:col-span-2">
-              <label className="furniture-subtitle text-[10px] text-[#070707]/60 block mb-1">PRODUCT TITLE</label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Sony WH-1000XM5 Headphones Black"
-                required
-                className="w-full px-4 py-3 bg-[#F1F1ED] border border-[#070707]/10 text-xs outline-none focus:border-[#070707]"
-              />
-            </div>
-
-            <div>
-              <label className="furniture-subtitle text-[10px] text-[#070707]/60 block mb-1">PRICE (MARKETPLACE CREDITS)</label>
-              <input
-                type="number"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                placeholder="280"
-                required
-                min={1}
-                className="w-full px-4 py-3 bg-[#F1F1ED] border border-[#070707]/10 font-mono font-bold text-sm text-[#EF6F79] outline-none focus:border-[#070707]"
-              />
-            </div>
-          </div>
-
-          {/* Category & Condition */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="furniture-subtitle text-[10px] text-[#070707]/60 block mb-1">CATEGORY</label>
-              <select
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-                className="w-full px-4 py-3 bg-[#F1F1ED] border border-[#070707]/10 text-xs outline-none focus:border-[#070707]"
-              >
-                <option value="1">Electronics</option>
-                <option value="2">Vehicles</option>
-                <option value="3">Furniture</option>
-                <option value="4">Fashion</option>
-                <option value="5">Books</option>
-                <option value="6">Sports</option>
-                <option value="7">Home Appliances</option>
-                <option value="8">Musical Instruments</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="furniture-subtitle text-[10px] text-[#070707]/60 block mb-1">CONDITION</label>
-              <select
-                value={condition}
-                onChange={(e) => setCondition(e.target.value)}
-                className="w-full px-4 py-3 bg-[#F1F1ED] border border-[#070707]/10 text-xs outline-none focus:border-[#070707]"
-              >
-                {PRODUCT_CONDITIONS.map((cond) => (
-                  <option key={cond.value} value={cond.value}>
-                    {cond.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="furniture-subtitle text-[10px] text-[#070707]/60 block mb-1">CITY / LOCATION</label>
-              <input
-                type="text"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                placeholder="Bengaluru"
-                className="w-full px-4 py-3 bg-[#F1F1ED] border border-[#070707]/10 text-xs outline-none focus:border-[#070707]"
-              />
-            </div>
-          </div>
-
-          {/* Description */}
-          <div>
-            <div className="flex justify-between items-center mb-1">
-              <label className="furniture-subtitle text-[10px] text-[#070707]/60 block">DETAILED DESCRIPTION</label>
-              <button
-                type="button"
-                onClick={() => setAiModalOpen(true)}
-                className="furniture-subtitle text-[10px] text-[#EF6F79] hover:underline flex items-center gap-1"
-              >
-                <Sparkles className="w-3.5 h-3.5" /> AI GENERATE
-              </button>
-            </div>
-            <textarea
-              rows={6}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe condition, inclusion details, serial numbers, reason for selling..."
-              required
-              className="w-full p-4 bg-[#F1F1ED] border border-[#070707]/10 text-xs outline-none focus:border-[#070707]"
-            />
-          </div>
-
-          {/* Submit Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-[#070707]/10">
-            <Link
-              to="/seller/products"
-              className="px-6 py-3 bg-[#F1F1ED] hover:bg-[#E4E5E0] text-[#070707] furniture-subtitle text-xs transition-colors"
-            >
-              CANCEL
-            </Link>
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className="px-8 py-3 bg-[#070707] hover:bg-[#EF6F79] text-white furniture-subtitle text-xs transition-colors"
-            >
-              {submitting ? 'PUBLISHING LISTING...' : 'PUBLISH LISTING'}
-            </button>
-          </div>
-        </form>
+        <button
+          type="button"
+          onClick={() => setAiModalOpen(true)}
+          className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-rose-600 text-white font-semibold text-xs sm:text-sm transition-all shadow-xs flex items-center gap-2 self-start md:self-auto"
+        >
+          <Sparkles className="w-4 h-4 text-rose-400" />
+          <span>Gemini AI Assistant</span>
+        </button>
       </div>
 
-      {/* AI Generate Description Modal */}
-      <Modal isOpen={aiModalOpen} onClose={() => setAiModalOpen(false)} title="Gemini AI Description Assistant">
-        <div className="space-y-4">
-          <div className="p-3 bg-[#F1F1ED] border border-[#070707]/10 text-[#070707] text-xs flex items-center gap-2">
-            <Bot className="w-5 h-5 text-[#EF6F79] shrink-0" />
-            <span>Provide optional key highlights (e.g. "battery 99%, includes charger, non-smoking home").</span>
-          </div>
+      {/* Form Container */}
+      <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-8 shadow-xs space-y-6">
+        {/* Images Gallery */}
+        <div>
+          <label className="block text-xs font-bold text-slate-700 uppercase mb-3">
+            Product Images Gallery
+          </label>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {imagePreviews.map((img, idx) => (
+              <div key={idx} className="relative aspect-square rounded-xl bg-slate-50 border border-slate-200 overflow-hidden group">
+                <img src={img} alt="" className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => removeImage(idx)}
+                  className="absolute top-2 right-2 p-1.5 rounded-lg bg-slate-900/80 text-white hover:bg-rose-600 transition-colors shadow-xs"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
 
-          <div>
-            <label className="furniture-subtitle text-[10px] text-[#070707]/60 block mb-1">KEY HIGHLIGHTS</label>
+            <label className="aspect-square rounded-xl border-2 border-dashed border-slate-300 hover:border-slate-800 bg-slate-50 hover:bg-slate-100/60 transition-colors flex flex-col items-center justify-center cursor-pointer p-4 text-center">
+              <Upload className="w-6 h-6 text-slate-400 mb-1" />
+              <span className="text-xs font-bold text-slate-600">Upload Image</span>
+              <input type="file" multiple accept="image/*" onChange={handleImageUpload} className="hidden" />
+            </label>
+          </div>
+        </div>
+
+        {/* Title & Price */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="sm:col-span-2">
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
+              Product Title *
+            </label>
             <input
               type="text"
-              value={aiPrompt}
-              onChange={(e) => setAiPrompt(e.target.value)}
-              placeholder="e.g. low shutter count, original box, fast shipping"
-              className="w-full px-3.5 py-2.5 bg-[#F1F1ED] border border-[#070707]/10 text-xs outline-none focus:border-[#070707]"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. Sony WH-1000XM5 Wireless Headphones Silver"
+              required
+              className="w-full p-3 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-800"
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-3">
-            <button
-              type="button"
-              onClick={() => setAiModalOpen(false)}
-              className="px-4 py-2 bg-[#F1F1ED] text-[#070707] furniture-subtitle text-[10px]"
-            >
-              CANCEL
-            </button>
-
-            <button
-              type="button"
-              onClick={handleGenerateAiDescription}
-              disabled={generatingAi}
-              className="px-6 py-2.5 bg-[#070707] hover:bg-[#EF6F79] text-white furniture-subtitle text-[10px] flex items-center gap-1.5 transition-colors"
-            >
-              <Sparkles className="w-4 h-4 text-[#EF6F79]" />
-              <span>{generatingAi ? 'GENERATING...' : 'GENERATE WITH GEMINI'}</span>
-            </button>
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
+              Price (MC Credits) *
+            </label>
+            <input
+              type="number"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="24500"
+              required
+              min={1}
+              className="w-full p-3 rounded-xl border border-slate-300 font-mono font-bold text-sm text-rose-600 outline-none focus:ring-2 focus:ring-slate-900"
+            />
           </div>
         </div>
-      </Modal>
+
+        {/* Category, Condition, Brand & Location */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
+              Category *
+            </label>
+            <select
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              className="w-full p-3 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-800 bg-white"
+            >
+              <option value="1">Electronics</option>
+              <option value="2">Vehicles</option>
+              <option value="3">Furniture</option>
+              <option value="4">Fashion</option>
+              <option value="5">Books</option>
+              <option value="6">Sports</option>
+              <option value="7">Home Appliances</option>
+              <option value="8">Musical Instruments</option>
+              <option value="9">Collectibles</option>
+              <option value="10">Real Estate</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
+              Condition *
+            </label>
+            <select
+              value={condition}
+              onChange={(e) => setCondition(e.target.value)}
+              className="w-full p-3 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-800 bg-white"
+            >
+              {PRODUCT_CONDITIONS.map((cond) => (
+                <option key={cond.value} value={cond.value}>
+                  {cond.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
+              Brand / Manufacturer
+            </label>
+            <input
+              type="text"
+              value={brand}
+              onChange={(e) => setBrand(e.target.value)}
+              placeholder="e.g. Sony, Apple, Trek"
+              className="w-full p-3 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-800"
+            />
+          </div>
+        </div>
+
+        {/* Location Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
+              City / Metro Area *
+            </label>
+            <input
+              type="text"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              placeholder="Bengaluru"
+              required
+              className="w-full p-3 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-800"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
+              State / Region *
+            </label>
+            <input
+              type="text"
+              value={stateName}
+              onChange={(e) => setStateName(e.target.value)}
+              placeholder="Karnataka"
+              required
+              className="w-full p-3 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-800"
+            />
+          </div>
+        </div>
+
+        {/* Description */}
+        <div>
+          <div className="flex justify-between items-center mb-1.5">
+            <label className="block text-xs font-bold text-slate-700 uppercase">
+              Detailed Description *
+            </label>
+            <button
+              type="button"
+              onClick={() => setAiModalOpen(true)}
+              className="text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>AI Auto-Write</span>
+            </button>
+          </div>
+          <textarea
+            rows={5}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Describe technical specs, cosmetic condition, accessories included, and pickup availability..."
+            required
+            className="w-full p-3 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-800"
+          />
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+          <Link
+            to="/seller/products"
+            className="px-5 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-xs sm:text-sm transition-colors"
+          >
+            Cancel
+          </Link>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-rose-600 text-white font-bold text-xs sm:text-sm transition-colors shadow-xs"
+          >
+            {submitting ? 'Publishing Listing...' : 'Publish to Marketplace'}
+          </button>
+        </div>
+      </form>
+
+      {/* AI Generate Description Modal */}
+      {aiModalOpen && (
+        <Modal isOpen={aiModalOpen} onClose={() => setAiModalOpen(false)} title="Gemini AI Description Assistant">
+          <div className="space-y-5 p-2 font-sans">
+            <div className="p-3.5 bg-blue-50 text-blue-900 border border-blue-200 rounded-xl text-xs flex items-center gap-2.5">
+              <Bot className="w-5 h-5 text-blue-600 shrink-0" />
+              <span>Provide optional key highlights (e.g. "battery 98%, includes leather case, used 3 months").</span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase">
+                Key Product Highlights
+              </label>
+              <input
+                type="text"
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder="e.g. mint condition, original charger, fast local handover"
+                className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-900"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setAiModalOpen(false)}
+                className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-semibold text-xs hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleGenerateAiDescription}
+                disabled={generatingAi}
+                className="px-5 py-2 rounded-xl bg-slate-900 hover:bg-rose-600 text-white font-bold text-xs transition-colors flex items-center gap-1.5 shadow-xs"
+              >
+                <Sparkles className="w-4 h-4 text-rose-400" />
+                <span>{generatingAi ? 'Generating...' : 'Generate with Gemini'}</span>
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }

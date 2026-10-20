@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Package } from 'lucide-react'
 import productService from '../../services/productService'
 import { PRODUCT_CATEGORIES, PRODUCT_CONDITIONS } from '../../utils/constants'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
@@ -27,20 +27,20 @@ export default function EditProduct() {
       try {
         const res = await productService.getProductById(id)
         const p = res.data || {
-          title: 'iPhone 15 Pro Max 256GB - Natural Titanium',
+          title: 'MacBook Air 15-inch M3',
           category: 'Electronics',
           condition: 'LIKE_NEW',
-          price: 950,
-          locationName: 'Downtown (1.2 km away)',
-          description: 'Flawless condition, protected with ceramic screen guard.',
-          images: ['https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&auto=format&fit=crop'],
+          price: 118000,
+          locationName: 'Bengaluru',
+          description: 'Flawless condition, protected with original sleeve.',
+          images: ['https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&auto=format&fit=crop'],
         }
 
         setTitle(p.title || '')
         setCategory(p.category || 'Electronics')
         setCondition(p.condition || 'LIKE_NEW')
-        setPrice(p.price || '')
-        setLocationName(p.locationName || '')
+        setPrice(p.priceInCredits || p.price || '')
+        setLocationName(p.city || p.locationName || 'Bengaluru')
         setDescription(p.description || '')
         setImages(p.images || [])
       } catch {
@@ -58,12 +58,10 @@ export default function EditProduct() {
     try {
       await productService.updateProduct(id, {
         title,
-        category,
         condition,
-        price: Number(price),
-        locationName,
+        priceInCredits: Number(price),
+        city: locationName,
         description,
-        images,
       })
       toast.success('Product updated successfully!')
       navigate('/seller/products')
@@ -77,89 +75,110 @@ export default function EditProduct() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F7F7F4] flex items-center justify-center">
+      <div className="min-h-[60vh] flex items-center justify-center">
         <LoadingSpinner size="lg" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F7F4] text-[#070707] pb-16">
+    <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto w-full space-y-8 font-sans">
       <DemoDisclaimer />
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-        <div className="border-b border-[#070707]/10 pb-6">
-          <Link to="/seller/products" className="furniture-subtitle text-[10px] text-[#070707]/60 hover:text-[#070707] flex items-center gap-1 mb-2">
-            <ArrowLeft className="w-3.5 h-3.5" /> BACK TO LISTINGS
+      {/* Top Header Section */}
+      <div className="bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-8 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-2">
+          <Link
+            to="/seller/products"
+            className="text-xs font-bold text-slate-500 hover:text-slate-900 flex items-center gap-1.5 transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back to Store Inventory</span>
           </Link>
-          <h1 className="font-serif text-3xl sm:text-4xl text-[#070707]">Edit Product Listing</h1>
+          <h1 className="font-sans font-black text-2xl sm:text-3xl lg:text-4xl tracking-tight text-slate-900">
+            Edit Product Listing
+          </h1>
+          <p className="text-sm text-slate-600">
+            Modify catalog details, credit pricing, and condition specifics for this item.
+          </p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-8 shadow-xs space-y-6">
+        <div>
+          <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
+            Product Title
+          </label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+            className="w-full p-3 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-800"
+          />
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white p-6 sm:p-8 border border-[#070707]/10 space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="furniture-subtitle text-[10px] text-[#070707]/60 block mb-1">TITLE</label>
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
+              Price (MC Credits)
+            </label>
             <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              type="number"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
               required
-              className="w-full px-4 py-3 bg-[#F1F1ED] border border-[#070707]/10 text-xs outline-none focus:border-[#070707]"
+              className="w-full p-3 rounded-xl border border-slate-300 font-mono font-bold text-sm text-rose-600 outline-none focus:ring-2 focus:ring-slate-900"
             />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="furniture-subtitle text-[10px] text-[#070707]/60 block mb-1">PRICE (MC)</label>
-              <input
-                type="number"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                required
-                className="w-full px-4 py-3 bg-[#F1F1ED] border border-[#070707]/10 font-mono font-bold text-sm text-[#EF6F79] outline-none focus:border-[#070707]"
-              />
-            </div>
-
-            <div>
-              <label className="furniture-subtitle text-[10px] text-[#070707]/60 block mb-1">CATEGORY</label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-4 py-3 bg-[#F1F1ED] border border-[#070707]/10 text-xs outline-none focus:border-[#070707]"
-              >
-                {PRODUCT_CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-            </div>
           </div>
 
           <div>
-            <label className="furniture-subtitle text-[10px] text-[#070707]/60 block mb-1">DESCRIPTION</label>
-            <textarea
-              rows={5}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              required
-              className="w-full p-4 bg-[#F1F1ED] border border-[#070707]/10 text-xs outline-none focus:border-[#070707]"
-            />
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4 border-t border-[#070707]/10">
-            <Link to="/seller/products" className="px-6 py-3 bg-[#F1F1ED] text-[#070707] furniture-subtitle text-xs">
-              CANCEL
-            </Link>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="px-8 py-3 bg-[#070707] hover:bg-[#EF6F79] text-white furniture-subtitle text-xs transition-colors"
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
+              Condition
+            </label>
+            <select
+              value={condition}
+              onChange={(e) => setCondition(e.target.value)}
+              className="w-full p-3 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-800 bg-white"
             >
-              {submitting ? 'SAVING CHANGES...' : 'SAVE CHANGES'}
-            </button>
+              {PRODUCT_CONDITIONS.map((cond) => (
+                <option key={cond.value} value={cond.value}>
+                  {cond.label}
+                </option>
+              ))}
+            </select>
           </div>
-        </form>
-      </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
+            Detailed Description
+          </label>
+          <textarea
+            rows={5}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            required
+            className="w-full p-3 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-800"
+          />
+        </div>
+
+        <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+          <Link
+            to="/seller/products"
+            className="px-5 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-xs sm:text-sm transition-colors"
+          >
+            Cancel
+          </Link>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-rose-600 text-white font-bold text-xs sm:text-sm transition-colors shadow-xs"
+          >
+            {submitting ? 'Saving Changes...' : 'Save Changes'}
+          </button>
+        </div>
+      </form>
     </div>
   )
 }

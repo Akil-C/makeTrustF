@@ -1,22 +1,24 @@
 import { useState, useEffect } from 'react'
 import {
   Users,
-  Ban,
-  Coins,
   Search,
+  Ban,
+  CheckCircle,
+  Coins,
+  ShieldAlert,
+  UserCheck,
 } from 'lucide-react'
 import adminService from '../../services/adminService'
-import walletService from '../../services/walletService'
 import { formatCredits, formatDate } from '../../utils/formatters'
-import Modal from '../../components/common/Modal'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
+import Modal from '../../components/common/Modal'
 import toast from 'react-hot-toast'
 
 const MOCK_USERS = [
-  { id: 1, name: 'John Buyer', email: 'john@example.com', role: 'BUYER', status: 'ACTIVE', walletBalance: 2500, createdAt: '2026-08-10' },
-  { id: 2, name: 'TechHub Deals', email: 'tech@hub.com', role: 'SELLER', status: 'ACTIVE', walletBalance: 12400, createdAt: '2026-07-15' },
-  { id: 3, name: 'Suspected Spammer', email: 'spam@bot.com', role: 'BUYER', status: 'BANNED', walletBalance: 0, createdAt: '2026-09-01' },
+  { id: 1, name: 'Admin Operations', email: 'admin@markettrust.com', role: 'ADMIN', status: 'ACTIVE', walletBalance: 500000, createdAt: '2026-08-01' },
+  { id: 2, name: 'TechHub Electronics', email: 'seller1@demo.com', role: 'SELLER', status: 'ACTIVE', walletBalance: 124000, createdAt: '2026-08-10' },
+  { id: 3, name: 'Alex Buyer', email: 'buyer1@demo.com', role: 'BUYER', status: 'ACTIVE', walletBalance: 25000, createdAt: '2026-08-15' },
 ]
 
 export default function AdminUsers() {
@@ -24,11 +26,11 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
 
-  // Credit Grant Modal
-  const [grantModalOpen, setGrantModalOpen] = useState(false)
+  // Grant Credits Modal
   const [selectedUser, setSelectedUser] = useState(null)
-  const [grantAmount, setGrantAmount] = useState(500)
-  const [grantReason, setGrantReason] = useState('Demo Bonus Topup')
+  const [grantModalOpen, setGrantModalOpen] = useState(false)
+  const [grantAmount, setGrantAmount] = useState(5000)
+  const [grantReason, setGrantReason] = useState('Promotional Liquidity Topup')
 
   useEffect(() => {
     async function loadUsers() {
@@ -70,17 +72,13 @@ export default function AdminUsers() {
     if (!selectedUser) return
     const userName = selectedUser?.name || selectedUser?.displayName || 'User'
     try {
-      await walletService.adminTopUp({
-        userId: selectedUser.id,
-        amount: Number(grantAmount),
-        reason: grantReason,
-      })
-      toast.success(`Granted ${grantAmount} MC to ${userName}!`)
+      await adminService.grantCredits(selectedUser.id, grantAmount, grantReason)
       setUsers((prev) =>
         prev.map((u) =>
           u.id === selectedUser.id ? { ...u, walletBalance: (u.walletBalance || 0) + Number(grantAmount) } : u
         )
       )
+      toast.success(`Granted ${grantAmount} MC to ${userName}!`)
       setGrantModalOpen(false)
     } catch {
       setUsers((prev) =>
@@ -100,160 +98,178 @@ export default function AdminUsers() {
   )
 
   return (
-    <div className="min-h-screen bg-[#F7F7F4] text-[#070707] pb-16">
+    <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-8 font-sans">
       <DemoDisclaimer />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-[#070707]/10 pb-6 gap-4">
-          <div>
-            <span className="furniture-subtitle text-xs text-[#EF6F79]">PLATFORM USERS</span>
-            <h1 className="font-serif text-3xl sm:text-4xl text-[#070707] mt-1 flex items-center gap-3">
-              <Users className="w-7 h-7 text-[#EF6F79]" /> User Management Console
-            </h1>
-            <p className="text-xs text-[#070707]/60 mt-1">
-              Inspect user profiles, suspend non-compliant accounts, and grant Marketplace Credits.
-            </p>
+      {/* Top Header Section */}
+      <div className="bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-8 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-50 text-purple-700 text-xs font-bold rounded-full border border-purple-200">
+            <Users className="w-4 h-4 text-purple-600" />
+            <span>PLATFORM USER DIRECTORY</span>
           </div>
-
-          <div className="relative w-full sm:w-80">
-            <Search className="w-4 h-4 text-[#070707]/40 absolute left-3.5 top-3" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search user name or email..."
-              className="w-full pl-10 pr-4 py-2.5 bg-[#F1F1ED] border border-[#070707]/10 text-xs outline-none focus:border-[#070707]"
-            />
-          </div>
+          <h1 className="font-sans font-black text-2xl sm:text-3xl lg:text-4xl tracking-tight text-slate-900">
+            User Management Console
+          </h1>
+          <p className="text-sm text-slate-600 max-w-2xl">
+            Inspect registered accounts, review role assignments, issue credit adjustments, and enforce safety bans.
+          </p>
         </div>
 
-        {/* Users Table */}
-        <div className="bg-white border border-[#070707]/10 overflow-hidden">
-          {loading ? (
-            <div className="py-16 flex justify-center">
-              <LoadingSpinner size="lg" />
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-[#F1F1ED] furniture-subtitle text-[10px] text-[#070707]/60 border-b border-[#070707]/10">
-                  <tr>
-                    <th className="py-4 px-6">USER PROFILE</th>
-                    <th className="py-4 px-4">ROLE</th>
-                    <th className="py-4 px-4">MC BALANCE</th>
-                    <th className="py-4 px-4">STATUS</th>
-                    <th className="py-4 px-4">JOINED</th>
-                    <th className="py-4 px-6 text-right">MODERATION ACTIONS</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#070707]/10">
-                  {filtered.map((u) => (
-                    <tr key={u.id} className="hover:bg-[#F7F7F4] transition-colors">
-                      <td className="py-4 px-6">
-                        <span className="font-serif font-bold text-[#070707] text-sm block">{u?.name || u?.displayName || 'User'}</span>
-                        <span className="text-[10px] font-mono text-[#070707]/50 block">{u?.email}</span>
-                      </td>
-
-                      <td className="py-4 px-4">
-                        <span className="font-mono text-[10px] font-bold text-[#070707] bg-[#F1F1ED] px-2.5 py-0.5 border border-[#070707]/10">
-                          {u.role}
-                        </span>
-                      </td>
-
-                      <td className="py-4 px-4 font-mono font-bold text-[#EF6F79] text-sm">{formatCredits(u.walletBalance)}</td>
-
-                      <td className="py-4 px-4">
-                        <span
-                          className={`inline-flex px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase border ${
-                            u.status === 'ACTIVE'
-                              ? 'text-emerald-800 bg-emerald-50 border-emerald-200'
-                              : 'text-red-800 bg-red-50 border-red-200'
-                          }`}
-                        >
-                          {u.status}
-                        </span>
-                      </td>
-
-                      <td className="py-4 px-4 font-mono text-[10px] text-[#070707]/50">{formatDate(u.createdAt)}</td>
-
-                      <td className="py-4 px-6 text-right space-x-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedUser(u)
-                            setGrantModalOpen(true)
-                          }}
-                          className="px-3 py-1.5 bg-[#F1F1ED] hover:bg-[#E4E5E0] text-[#070707] furniture-subtitle text-[10px] border border-[#070707]/10 transition-colors inline-flex items-center gap-1"
-                        >
-                          <Coins className="w-3.5 h-3.5 text-[#EF6F79]" />
-                          <span>GRANT MC</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleBanToggle(u)}
-                          className={`px-3 py-1.5 furniture-subtitle text-[10px] transition-colors inline-flex items-center gap-1 ${
-                            u.status === 'BANNED'
-                              ? 'bg-emerald-700 hover:bg-emerald-800 text-white'
-                              : 'bg-red-700 hover:bg-red-800 text-white'
-                          }`}
-                        >
-                          <Ban className="w-3.5 h-3.5" />
-                          <span>{u.status === 'BANNED' ? 'UNBAN USER' : 'BAN USER'}</span>
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+        <div className="relative w-full sm:w-80">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name or email..."
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-900"
+          />
         </div>
       </div>
 
+      {/* Users Table */}
+      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+        {loading ? (
+          <div className="py-20 flex justify-center">
+            <LoadingSpinner size="lg" />
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs sm:text-sm">
+              <thead className="bg-slate-50 text-[11px] font-bold text-slate-600 uppercase tracking-wider border-b border-slate-200">
+                <tr>
+                  <th className="py-4 px-6">User Account</th>
+                  <th className="py-4 px-4">Role</th>
+                  <th className="py-4 px-4">MC Balance</th>
+                  <th className="py-4 px-4">Status</th>
+                  <th className="py-4 px-4">Member Since</th>
+                  <th className="py-4 px-6 text-right">Moderation Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700">
+                {filtered.map((u) => (
+                  <tr key={u.id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="py-4 px-6">
+                      <span className="font-bold text-slate-900 block text-sm">
+                        {u?.name || u?.displayName || 'User'}
+                      </span>
+                      <span className="text-xs font-mono text-slate-500 block">{u?.email}</span>
+                    </td>
+
+                    <td className="py-4 px-4">
+                      <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-800 border border-slate-200">
+                        {u.role}
+                      </span>
+                    </td>
+
+                    <td className="py-4 px-4 font-mono font-bold text-rose-600 text-sm">
+                      {formatCredits(u.walletBalance)}
+                    </td>
+
+                    <td className="py-4 px-4">
+                      <span
+                        className={`inline-flex px-2.5 py-0.5 rounded-full text-[11px] font-bold border uppercase ${
+                          u.status === 'ACTIVE'
+                            ? 'text-emerald-800 bg-emerald-50 border-emerald-200'
+                            : 'text-red-800 bg-red-50 border-red-200'
+                        }`}
+                      >
+                        {u.status}
+                      </span>
+                    </td>
+
+                    <td className="py-4 px-4 font-mono text-xs text-slate-500">
+                      {formatDate(u.createdAt)}
+                    </td>
+
+                    <td className="py-4 px-6 text-right space-x-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedUser(u)
+                          setGrantModalOpen(true)
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-xs border border-amber-300 transition-colors inline-flex items-center gap-1.5 shadow-xs"
+                      >
+                        <Coins className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Grant MC</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleBanToggle(u)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1.5 shadow-xs ${
+                          u.status === 'BANNED'
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                            : 'bg-rose-600 hover:bg-rose-700 text-white'
+                        }`}
+                      >
+                        <Ban className="w-3.5 h-3.5" />
+                        <span>{u.status === 'BANNED' ? 'Unban' : 'Ban User'}</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
       {/* Grant MC Modal */}
-      <Modal isOpen={grantModalOpen} onClose={() => setGrantModalOpen(false)} title={`Grant Demo MC Credits to ${selectedUser?.name || selectedUser?.displayName || 'User'}`}>
-        <form onSubmit={handleGrantCreditsSubmit} className="space-y-4">
-          <div>
-            <label className="furniture-subtitle text-[10px] text-[#070707]/60 block mb-1">CREDIT AMOUNT (MC)</label>
-            <input
-              type="number"
-              value={grantAmount}
-              onChange={(e) => setGrantAmount(e.target.value)}
-              required
-              min={10}
-              className="w-full px-3.5 py-2.5 bg-[#F1F1ED] border border-[#070707]/10 font-mono text-xs font-bold text-[#EF6F79] outline-none focus:border-[#070707]"
-            />
-          </div>
+      {grantModalOpen && (
+        <Modal
+          isOpen={grantModalOpen}
+          onClose={() => setGrantModalOpen(false)}
+          title={`Grant MC Credits to ${selectedUser?.name || selectedUser?.displayName || 'User'}`}
+        >
+          <form onSubmit={handleGrantCreditsSubmit} className="space-y-5 p-2 font-sans">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase">
+                Credit Amount (MC)
+              </label>
+              <input
+                type="number"
+                value={grantAmount}
+                onChange={(e) => setGrantAmount(e.target.value)}
+                required
+                min={10}
+                className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl font-mono text-sm font-bold text-rose-600 outline-none focus:ring-2 focus:ring-slate-900"
+              />
+            </div>
 
-          <div>
-            <label className="furniture-subtitle text-[10px] text-[#070707]/60 block mb-1">GRANT REASON / AUDIT NOTE</label>
-            <input
-              type="text"
-              value={grantReason}
-              onChange={(e) => setGrantReason(e.target.value)}
-              required
-              className="w-full px-3.5 py-2.5 bg-[#F1F1ED] border border-[#070707]/10 text-xs outline-none focus:border-[#070707]"
-            />
-          </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase">
+                Grant Reason / Audit Note
+              </label>
+              <input
+                type="text"
+                value={grantReason}
+                onChange={(e) => setGrantReason(e.target.value)}
+                required
+                className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-800"
+              />
+            </div>
 
-          <div className="flex justify-end gap-3 pt-3 border-t border-[#070707]/10">
-            <button
-              type="button"
-              onClick={() => setGrantModalOpen(false)}
-              className="px-4 py-2 bg-[#F1F1ED] text-[#070707] furniture-subtitle text-[10px]"
-            >
-              CANCEL
-            </button>
-            <button
-              type="submit"
-              className="px-6 py-2 bg-[#070707] hover:bg-[#EF6F79] text-white furniture-subtitle text-[10px] transition-colors"
-            >
-              ISSUE CREDITS
-            </button>
-          </div>
-        </form>
-      </Modal>
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setGrantModalOpen(false)}
+                className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-semibold text-xs hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2 rounded-xl bg-slate-900 hover:bg-rose-600 text-white font-bold text-xs transition-colors shadow-xs"
+              >
+                Issue Credits
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   )
 }

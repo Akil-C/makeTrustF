@@ -1,6 +1,20 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
+  TrendingUp,
+  Package,
+  ShoppingBag,
+  Clock,
+  ArrowUpRight,
+  Sparkles,
+  ShieldCheck,
+  Plus,
+  Coins,
+  DollarSign,
+  Layers,
+  ChevronRight,
+} from 'lucide-react'
+import {
   AreaChart,
   Area,
   XAxis,
@@ -9,24 +23,14 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import {
-  Sparkles,
-  Plus,
-  ArrowUpRight,
-  TrendingUp,
-  ShieldCheck,
-  Clock,
-  Package,
-} from 'lucide-react'
-import sellerService from '../../services/sellerService'
 import orderService from '../../services/orderService'
-import aiService from '../../services/aiService'
+import sellerService from '../../services/sellerService'
 import { formatCredits, formatDate, getOrderStatusColor, formatOrderStatus } from '../../utils/formatters'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
 
 const REVENUE_DATA = [
-  { day: 'Mon', revenue: 450, orders: 2 },
-  { day: 'Tue', revenue: 780, orders: 4 },
+  { day: 'Mon', revenue: 420, orders: 2 },
+  { day: 'Tue', revenue: 850, orders: 4 },
   { day: 'Wed', revenue: 600, orders: 3 },
   { day: 'Thu', revenue: 1200, orders: 6 },
   { day: 'Fri', revenue: 950, orders: 4 },
@@ -37,32 +41,32 @@ const REVENUE_DATA = [
 const MOCK_PENDING_ORDERS = [
   {
     id: 'ord-101',
-    productTitle: 'iPhone 15 Pro Max 256GB',
-    price: 950,
+    productTitle: 'MacBook Air 15-inch M3',
+    price: 118000,
     buyerName: 'David K.',
     status: 'CONFIRMED',
-    createdAt: '2026-10-04T12:00:00Z',
+    createdAt: '2026-10-18T12:00:00Z',
   },
   {
     id: 'ord-104',
     productTitle: 'Sony WH-1000XM5 Headphones',
-    price: 280,
+    price: 24500,
     buyerName: 'Sarah M.',
     status: 'PENDING',
-    createdAt: '2026-10-05T16:45:00Z',
+    createdAt: '2026-10-19T16:45:00Z',
   },
 ]
 
 export default function SellerDashboard() {
   const [stats, setStats] = useState({
-    totalRevenue: 6980,
-    activeListings: 12,
+    totalRevenue: 284000,
+    activeListings: 18,
     pendingOrdersCount: 2,
     completedSales: 48,
   })
   const [pendingOrders, setPendingOrders] = useState(MOCK_PENDING_ORDERS)
   const [aiTip, setAiTip] = useState(
-    'Pricing suggestion: Audio category demand is up 18% in your area. Consider featuring your Sony Headphones listing for +25% faster sales.'
+    'Pricing intelligence: Electronics and Audio demand is up 22% in your regional corridor. Consider featuring your Sony Headphones and MacBook Air listings for 35% higher inquiry rates.'
   )
 
   const navigate = useNavigate()
@@ -70,12 +74,16 @@ export default function SellerDashboard() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [analyticsRes, ordersRes] = await Promise.allSettled([
+        const [analyticsRes, ordersRes, prodsRes] = await Promise.allSettled([
           sellerService.getAnalytics(),
           orderService.getSellerOrders({ status: 'PENDING' }),
+          sellerService.getMyProducts({ page: 0, size: 50 }),
         ])
         if (ordersRes.status === 'fulfilled' && ordersRes.value.data?.content) {
           setPendingOrders(ordersRes.value.data.content)
+        }
+        if (prodsRes.status === 'fulfilled' && prodsRes.value.data?.totalElements) {
+          setStats(prev => ({ ...prev, activeListings: prodsRes.value.data.totalElements }))
         }
       } catch {
         // Fallback
@@ -85,147 +93,203 @@ export default function SellerDashboard() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-[#F7F7F4] text-[#070707] pb-16">
+    <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-8 font-sans">
       <DemoDisclaimer />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-        {/* Dashboard Top Header */}
-        <div className="bg-white p-6 sm:p-8 border border-[#070707]/10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#F1F1ED] text-[#070707] text-[10px] font-mono uppercase tracking-wider mb-2 border border-[#070707]/10">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#EF6F79]" /> GOLD VERIFIED SELLER
+      {/* Top Header Section */}
+      <div className="bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-8 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-full border border-emerald-200">
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <span>VERIFIED SELLER MERCHANT PORTAL</span>
+          </div>
+          <h1 className="font-sans font-black text-2xl sm:text-3xl lg:text-4xl tracking-tight text-slate-900">
+            Seller Merchant Dashboard
+          </h1>
+          <p className="text-sm text-slate-600 max-w-2xl">
+            Oversee active catalog inventory, dispatch incoming buyer orders, monitor protected escrow revenues, and optimize pricing with AI intelligence.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            to="/seller/products"
+            className="px-4 py-2.5 rounded-xl border border-slate-300 hover:border-slate-800 bg-white text-slate-800 font-semibold text-xs sm:text-sm transition-all shadow-xs flex items-center gap-2"
+          >
+            <Layers className="w-4 h-4 text-slate-500" />
+            <span>My Listings ({stats.activeListings})</span>
+          </Link>
+          <Link
+            to="/seller/products/create"
+            className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-emerald-700 text-white font-semibold text-xs sm:text-sm transition-all shadow-xs flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Create New Listing</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* AI Intelligence Banner */}
+      <div className="bg-slate-900 text-white p-6 rounded-2xl border border-slate-800 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+        <div className="flex items-start gap-4">
+          <div className="p-3 bg-rose-500/20 text-rose-400 rounded-xl border border-rose-500/30 shrink-0">
+            <Sparkles className="w-6 h-6 animate-pulse" />
+          </div>
+          <div className="space-y-1">
+            <div className="text-xs font-bold tracking-wider text-rose-400 uppercase">
+              GEMINI AI SELLER INTELLIGENCE RECOMMENDATION
             </div>
-            <h1 className="font-serif text-3xl sm:text-4xl text-[#070707]">Seller Merchant Dashboard</h1>
-            <p className="text-xs text-[#070707]/60 mt-1 max-w-xl">
-              Manage store inventory, monitor real-time escrow revenue in MC, and process incoming buyer transactions.
+            <p className="text-sm text-slate-200 leading-relaxed max-w-3xl font-medium">
+              {aiTip}
             </p>
           </div>
+        </div>
+        <Link
+          to="/seller/ai-insights"
+          className="px-4 py-2 bg-white/10 hover:bg-white text-white hover:text-slate-950 font-bold text-xs rounded-xl border border-white/20 transition-all shrink-0 flex items-center gap-1.5"
+        >
+          <span>Full AI Analysis</span>
+          <ArrowUpRight className="w-3.5 h-3.5" />
+        </Link>
+      </div>
 
-          <div className="flex gap-3">
-            <Link
-              to="/seller/products/create"
-              className="px-6 py-3.5 bg-[#070707] hover:bg-[#EF6F79] text-white furniture-subtitle text-xs transition-colors flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              <span>CREATE NEW LISTING</span>
-            </Link>
+      {/* 4 Financial & Operational Metric Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-xs space-y-2">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+            TOTAL REVENUE (MC)
+          </span>
+          <p className="text-3xl font-mono font-black text-rose-600">
+            {formatCredits(stats.totalRevenue)}
+          </p>
+          <div className="text-xs font-semibold text-emerald-600 flex items-center gap-1 pt-1">
+            <TrendingUp className="w-3.5 h-3.5" />
+            <span>+14.2% growth this cycle</span>
           </div>
         </div>
 
-        {/* AI Assistant Banner */}
-        <div className="bg-[#070707] text-white p-6 border border-[#070707] flex items-start gap-4">
-          <div className="p-3 bg-[#EF6F79]/20 text-[#EF6F79] shrink-0 border border-[#EF6F79]/30">
-            <Sparkles className="w-5 h-5 animate-pulse" />
-          </div>
-          <div className="flex-1">
-            <span className="furniture-subtitle text-[10px] text-[#EF6F79] block">
-              GEMINI AI SELLER INTELLIGENCE RECOMMENDATION
-            </span>
-            <p className="text-xs font-sans mt-1 text-[#F1F1ED]/90 leading-relaxed">{aiTip}</p>
-          </div>
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-xs space-y-2">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+            ACTIVE CATALOG LISTINGS
+          </span>
+          <p className="text-3xl font-mono font-black text-slate-900">
+            {stats.activeListings}
+          </p>
           <Link
-            to="/seller/ai-insights"
-            className="hidden sm:flex px-4 py-2 bg-white text-[#070707] hover:bg-[#EF6F79] hover:text-white furniture-subtitle text-[11px] transition-colors shrink-0"
+            to="/seller/products"
+            className="text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 pt-1"
           >
-            FULL AI REPORT
+            <span>Manage Products</span>
+            <ChevronRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
-        {/* Metrics Grid Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white p-6 border border-[#070707]/10 space-y-2">
-            <span className="furniture-subtitle text-[10px] text-[#070707]/50 block">TOTAL REVENUE (MC)</span>
-            <p className="text-3xl font-mono font-bold text-[#EF6F79]">{formatCredits(stats.totalRevenue)}</p>
-            <span className="text-[11px] font-mono text-emerald-600 font-semibold flex items-center gap-1">
-              <TrendingUp className="w-3.5 h-3.5" /> +14.2% from last week
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-xs space-y-2">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+            PENDING ORDERS
+          </span>
+          <p className="text-3xl font-mono font-black text-amber-600">
+            {pendingOrders.length}
+          </p>
+          <Link
+            to="/seller/orders"
+            className="text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 pt-1"
+          >
+            <span>Fulfill Deliveries</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-xs space-y-2">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+            COMPLETED SALES
+          </span>
+          <p className="text-3xl font-mono font-black text-slate-900">
+            {stats.completedSales}
+          </p>
+          <div className="text-xs text-slate-500 font-medium pt-1">
+            100% Escrow release clearance
+          </div>
+        </div>
+      </div>
+
+      {/* Analytics Chart & Pending Action Queue */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Revenue Chart (8 cols) */}
+        <div className="lg:col-span-8 bg-white p-6 sm:p-7 rounded-2xl border border-slate-200/90 shadow-xs space-y-4">
+          <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+            <div>
+              <h3 className="font-sans font-bold text-lg text-slate-900">
+                Weekly Revenue Performance (MC)
+              </h3>
+              <p className="text-xs text-slate-500">Real-time marketplace credit flow over the past 7 days</p>
+            </div>
+            <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+              LAST 7 DAYS
             </span>
           </div>
 
-          <div className="bg-white p-6 border border-[#070707]/10 space-y-2">
-            <span className="furniture-subtitle text-[10px] text-[#070707]/50 block">ACTIVE LISTINGS</span>
-            <p className="text-3xl font-mono font-bold text-[#070707]">{stats.activeListings}</p>
-            <Link to="/seller/products" className="furniture-subtitle text-[10px] text-[#EF6F79] hover:underline block">
-              MANAGE LISTINGS →
-            </Link>
-          </div>
-
-          <div className="bg-white p-6 border border-[#070707]/10 space-y-2">
-            <span className="furniture-subtitle text-[10px] text-[#070707]/50 block">PENDING ORDERS</span>
-            <p className="text-3xl font-mono font-bold text-[#070707]">{pendingOrders.length}</p>
-            <Link to="/seller/orders" className="furniture-subtitle text-[10px] text-[#EF6F79] hover:underline block">
-              FULFILL ORDERS →
-            </Link>
-          </div>
-
-          <div className="bg-white p-6 border border-[#070707]/10 space-y-2">
-            <span className="furniture-subtitle text-[10px] text-[#070707]/50 block">COMPLETED SALES</span>
-            <p className="text-3xl font-mono font-bold text-[#070707]">{stats.completedSales}</p>
-            <span className="text-[11px] text-[#070707]/60 font-mono">100% Escrow payout rate</span>
+          <div className="h-64 w-full pt-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={REVENUE_DATA}>
+                <defs>
+                  <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#e11d48" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="#e11d48" stopOpacity={0.0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
+                <Tooltip
+                  formatter={(value) => [`${Number(value).toLocaleString()} MC`, 'Revenue']}
+                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', color: '#fff' }}
+                />
+                <Area type="monotone" dataKey="revenue" stroke="#e11d48" strokeWidth={2.5} fillOpacity={1} fill="url(#colorRev)" />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Recharts Analytics & Pending Queue Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Revenue Chart (8 cols) */}
-          <div className="lg:col-span-8 bg-white p-6 border border-[#070707]/10 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-[#070707]/10">
-              <h3 className="font-serif font-bold text-[#070707] text-base">Weekly Revenue Performance (MC)</h3>
-              <span className="furniture-subtitle text-[10px] text-[#070707]/50">LAST 7 DAYS</span>
-            </div>
-
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={REVENUE_DATA}>
-                  <defs>
-                    <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#EF6F79" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#EF6F79" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E4E5E0" />
-                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#070707' }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#070707' }} />
-                  <Tooltip formatter={(value) => [`${value} MC`, 'Revenue']} />
-                  <Area type="monotone" dataKey="revenue" stroke="#EF6F79" strokeWidth={2} fillOpacity={1} fill="url(#colorRev)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+        {/* Action Required Queue (4 cols) */}
+        <div className="lg:col-span-4 bg-white p-6 sm:p-7 rounded-2xl border border-slate-200/90 shadow-xs space-y-4">
+          <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+            <h3 className="font-sans font-bold text-lg text-slate-900 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-rose-600" />
+              <span>Pending Orders</span>
+            </h3>
+            <Link to="/seller/orders" className="text-xs font-bold text-rose-600 hover:text-rose-700">
+              View All
+            </Link>
           </div>
 
-          {/* Pending Orders Queue Sidebar (4 cols) */}
-          <div className="lg:col-span-4 bg-white p-6 border border-[#070707]/10 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-[#070707]/10">
-              <h3 className="font-serif font-bold text-[#070707] text-base flex items-center gap-2">
-                <Clock className="w-4 h-4 text-[#EF6F79]" /> Action Required
-              </h3>
-              <Link to="/seller/orders" className="furniture-subtitle text-[10px] text-[#EF6F79] hover:underline">
-                ALL ORDERS
-              </Link>
-            </div>
-
-            <div className="space-y-3">
-              {pendingOrders.map((ord) => (
-                <div key={ord.id} className="p-4 bg-[#F1F1ED] border border-[#070707]/10 space-y-2">
-                  <div className="flex justify-between text-xs">
-                    <span className="font-bold text-[#070707]">{ord.productTitle}</span>
-                    <span className="font-mono font-bold text-[#EF6F79]">{formatCredits(ord.price)}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-[11px] text-[#070707]/60">
-                    <span>Buyer: {ord.buyerName}</span>
-                    <span className={`px-2 py-0.5 font-mono text-[10px] uppercase border ${getOrderStatusColor(ord.status)}`}>
-                      {formatOrderStatus(ord.status)}
-                    </span>
-                  </div>
-                  <Link
-                    to="/seller/orders"
-                    className="w-full py-2 bg-[#070707] hover:bg-[#EF6F79] text-white furniture-subtitle text-[10px] transition-colors flex items-center justify-center gap-1"
-                  >
-                    <span>FULFILL ORDER</span>
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                  </Link>
+          <div className="space-y-3">
+            {pendingOrders.map((ord) => (
+              <div
+                key={ord.id}
+                className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-slate-50 transition-colors space-y-3"
+              >
+                <div className="flex justify-between items-start gap-2">
+                  <span className="font-bold text-sm text-slate-900 line-clamp-1">{ord.productTitle}</span>
+                  <span className="font-mono font-bold text-sm text-rose-600 shrink-0">
+                    {formatCredits(ord.price)}
+                  </span>
                 </div>
-              ))}
-            </div>
+                <div className="flex justify-between items-center text-xs text-slate-600">
+                  <span>Buyer: <strong className="text-slate-800">{ord.buyerName}</strong></span>
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                    {ord.status}
+                  </span>
+                </div>
+                <Link
+                  to="/seller/orders"
+                  className="w-full py-2 bg-slate-900 hover:bg-rose-600 text-white rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 shadow-xs"
+                >
+                  <span>Fulfill Delivery</span>
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            ))}
           </div>
         </div>
       </div>
