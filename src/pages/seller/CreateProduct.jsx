@@ -7,6 +7,8 @@ import {
   X,
   Bot,
   Package,
+  MapPin,
+  Crosshair,
 } from 'lucide-react'
 import productService from '../../services/productService'
 import aiService from '../../services/aiService'
@@ -14,6 +16,16 @@ import { PRODUCT_CATEGORIES, PRODUCT_CONDITIONS } from '../../utils/constants'
 import Modal from '../../components/common/Modal'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
 import toast from 'react-hot-toast'
+
+const CITY_COORDINATES = {
+  Bengaluru: { lat: 12.9716, lng: 77.5946, state: 'Karnataka' },
+  Mumbai: { lat: 19.076, lng: 72.8777, state: 'Maharashtra' },
+  Delhi: { lat: 28.6139, lng: 77.209, state: 'Delhi' },
+  Hyderabad: { lat: 17.385, lng: 78.4867, state: 'Telangana' },
+  Chennai: { lat: 13.0827, lng: 80.2707, state: 'Tamil Nadu' },
+  Pune: { lat: 18.5204, lng: 73.8567, state: 'Maharashtra' },
+  'San Francisco': { lat: 37.7749, lng: -122.4194, state: 'California' },
+}
 
 export default function CreateProduct() {
   const navigate = useNavigate()
@@ -26,6 +38,8 @@ export default function CreateProduct() {
   const [brand, setBrand] = useState('')
   const [city, setCity] = useState('Bengaluru')
   const [stateName, setStateName] = useState('Karnataka')
+  const [latitude, setLatitude] = useState(12.9716)
+  const [longitude, setLongitude] = useState(77.5946)
   const [description, setDescription] = useState('')
   const [imageFiles, setImageFiles] = useState([])
   const [imagePreviews, setImagePreviews] = useState([
@@ -37,6 +51,37 @@ export default function CreateProduct() {
   const [aiModalOpen, setAiModalOpen] = useState(false)
   const [aiPrompt, setAiPrompt] = useState('')
   const [generatingAi, setGeneratingAi] = useState(false)
+
+  const handleCityChange = (cityName) => {
+    setCity(cityName)
+    const match = CITY_COORDINATES[cityName]
+    if (match) {
+      setLatitude(match.lat)
+      setLongitude(match.lng)
+      setStateName(match.state)
+    }
+  }
+
+  const handleDetectGPS = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser')
+      return
+    }
+    toast.loading('Detecting GPS location...', { id: 'gps-detect' })
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLatitude(pos.coords.latitude)
+        setLongitude(pos.coords.longitude)
+        toast.success(
+          `GPS coordinates attached (${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)})`,
+          { id: 'gps-detect' }
+        )
+      },
+      () => {
+        toast.error('Unable to retrieve GPS. Using default city hub.', { id: 'gps-detect' })
+      }
+    )
+  }
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files)
@@ -103,8 +148,8 @@ export default function CreateProduct() {
         brand: brand || 'Generic',
         city: city || 'Bengaluru',
         state: stateName || 'Karnataka',
-        latitude: 12.9716,
-        longitude: 77.5946,
+        latitude: latitude || 12.9716,
+        longitude: longitude || 77.5946,
         locationType: 'EXACT',
         quantity: 1,
       }
@@ -285,34 +330,70 @@ export default function CreateProduct() {
           </div>
         </div>
 
-        {/* Location Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
-              City / Metro Area *
-            </label>
-            <input
-              type="text"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              placeholder="Bengaluru"
-              required
-              className="w-full p-3 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-800"
-            />
+        {/* Location Row with City Presets & GPS */}
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 uppercase">
+                  City / Metro Hub *
+                </label>
+                <button
+                  type="button"
+                  onClick={handleDetectGPS}
+                  className="text-xs text-rose-600 font-bold hover:text-rose-700 flex items-center gap-1 transition-colors"
+                >
+                  <Crosshair className="w-3.5 h-3.5" />
+                  <span>GPS Auto-Detect</span>
+                </button>
+              </div>
+              <input
+                type="text"
+                value={city}
+                onChange={(e) => handleCityChange(e.target.value)}
+                placeholder="e.g. Bengaluru, Mumbai, Delhi"
+                required
+                className="w-full p-3 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-800"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
+                State / Region *
+              </label>
+              <input
+                type="text"
+                value={stateName}
+                onChange={(e) => setStateName(e.target.value)}
+                placeholder="Karnataka"
+                required
+                className="w-full p-3 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-800"
+              />
+            </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
-              State / Region *
-            </label>
-            <input
-              type="text"
-              value={stateName}
-              onChange={(e) => setStateName(e.target.value)}
-              placeholder="Karnataka"
-              required
-              className="w-full p-3 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-800"
-            />
+          {/* Quick Hub Pills */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-semibold text-slate-400 mr-1 flex items-center gap-1">
+              <MapPin className="w-3 h-3 text-slate-400" />
+              Quick Cities:
+            </span>
+            {['Bengaluru', 'Mumbai', 'Delhi', 'Hyderabad', 'Chennai', 'Pune', 'San Francisco'].map(
+              (c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => handleCityChange(c)}
+                  className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition-all ${
+                    city.toLowerCase() === c.toLowerCase()
+                      ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'
+                  }`}
+                >
+                  {c}
+                </button>
+              )
+            )}
           </div>
         </div>
 

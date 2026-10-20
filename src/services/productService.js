@@ -28,11 +28,11 @@ const productService = {
 
   /** Latest published products */
   getRecentProducts: (limit = 12) =>
-    api.get('/api/products/recent', { params: { limit } }),
+    api.get('/api/products/recent', { params: { size: limit } }),
 
   /** Trending / most-viewed products */
   getTrendingProducts: (limit = 12) =>
-    api.get('/api/products/trending', { params: { limit } }),
+    api.get('/api/products/trending', { params: { size: limit } }),
 
   /** Products similar to the given product */
   getSimilarProducts: (id, limit = 6) =>

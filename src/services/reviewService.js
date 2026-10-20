@@ -4,10 +4,10 @@ const reviewService = {
   /**
    * Get reviews for a seller.
    * @param {string|number} sellerId
-   * @param {{ page, size, rating }} params
+   * @param {{ page, size }} params
    */
   getSellerReviews: (sellerId, params = {}) =>
-    api.get(`/api/sellers/${sellerId}/reviews`, { params }),
+    api.get(`/api/reviews/seller/${sellerId}`, { params }),
 
   /**
    * Get reviews for a product.
@@ -15,33 +15,27 @@ const reviewService = {
    * @param {{ page, size }} params
    */
   getProductReviews: (productId, params = {}) =>
-    api.get(`/api/products/${productId}/reviews`, { params }),
+    api.get(`/api/reviews/product/${productId}`, { params }),
 
   /**
-   * Submit a review for a completed order.
-   * @param {string|number} orderId
-   * @param {{ rating, comment, images }} data
+   * Submit a verified review for a completed order.
+   * @param {{ orderId: number, rating: number, title: string, comment: string, productConditionRating?: number, sellerCommunicationRating?: number, accuracyRating?: number }} data
    */
-  createReview: (orderId, data) =>
-    api.post(`/api/orders/${orderId}/review`, data),
+  createReview: (data) => api.post('/api/reviews', data),
 
-  /**
-   * Update an existing review.
-   * @param {string|number} reviewId
-   * @param {{ rating, comment }} data
-   */
-  updateReview: (reviewId, data) =>
-    api.put(`/api/reviews/${reviewId}`, data),
+  /** Check if current buyer is eligible to review an order */
+  canReview: (orderId) => api.get(`/api/reviews/can-review/${orderId}`),
 
-  /** Delete a review (admin or author) */
-  deleteReview: (reviewId) => api.delete(`/api/reviews/${reviewId}`),
+  /** Get all reviews written by current buyer */
+  getMyReviews: (params = {}) => api.get('/api/reviews/my', { params }),
 
-  /** Flag a review as inappropriate */
-  flagReview: (reviewId, reason) =>
-    api.post(`/api/reviews/${reviewId}/flag`, { reason }),
+  /** Seller reply to a review */
+  replyToReview: (reviewId, reply) =>
+    api.put(`/api/reviews/${reviewId}/reply`, { reply }),
 
-  /** Get the review a buyer left for a specific order */
-  getOrderReview: (orderId) => api.get(`/api/orders/${orderId}/review`),
+  /** Admin hide review */
+  hideReview: (reviewId, reason = 'Policy violation') =>
+    api.put(`/api/admin/reviews/${reviewId}/hide`, null, { params: { reason } }),
 }
 
 export default reviewService
