@@ -110,13 +110,13 @@ export default function BuyerDashboard() {
                 GUARANTEED ESCROW WALLET
               </span>
               <h2 className="font-sans font-bold text-xl sm:text-2xl text-white">
-                Marketplace Credits (MC)
+                Marketplace Wallet (100 Credits = ₹100)
               </h2>
             </div>
           </div>
           <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-semibold">
             <ShieldCheck className="w-4 h-4" />
-            <span>Escrow Protection Active</span>
+            <span>Escrow Protection Active • 1 Cr = ₹1</span>
           </div>
         </div>
 
@@ -126,7 +126,7 @@ export default function BuyerDashboard() {
             <div className="text-3xl font-mono font-black text-amber-400">
               {formatCredits(availableBal)}
             </div>
-            <p className="text-[11px] text-slate-400">Ready for instant checkout</p>
+            <p className="text-[11px] text-slate-400">Ready for instant checkout (100 Credits = ₹100)</p>
           </div>
 
           <div className="p-5 bg-white/5 rounded-xl border border-white/10 space-y-1">

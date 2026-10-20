@@ -260,7 +260,7 @@ export default function Navbar() {
 
         {/* Right: Credits, Notifications, User Dashboard & Auth CTAs */}
         <div className="hidden sm:flex items-center gap-2.5 shrink-0">
-          {/* Universal Credits Pill: 0 MC until login, actual balance when authenticated */}
+          {/* Universal Credits Pill: 100 Credits = ₹100 */}
           <Link
             to={
               isAuthenticated
@@ -274,13 +274,16 @@ export default function Navbar() {
             className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100/90 text-amber-900 border border-amber-300/80 rounded-lg text-xs font-bold transition-all shadow-xs"
             title={
               isAuthenticated
-                ? `Active Wallet Balance: ${formatCredits(walletBalance || 0)}`
-                : 'Marketplace Credits: 0 MC (Sign in to view your wallet balance)'
+                ? `Active Wallet Balance: ₹${(walletBalance || 0).toLocaleString('en-IN')} (${(walletBalance || 0).toLocaleString('en-IN')} Credits) — 100 Credits = ₹100`
+                : 'Marketplace Wallet: 100 Credits = ₹100 (1 Credit = ₹1 INR)'
             }
           >
             <Coins className="w-3.5 h-3.5 text-amber-600 shrink-0" />
             <span className="font-mono font-bold tracking-tight">
-              {isAuthenticated ? formatCredits(walletBalance || 0) : '0 MC'}
+              {isAuthenticated ? `₹${(walletBalance || 0).toLocaleString('en-IN')}` : '₹0'}
+            </span>
+            <span className="text-[10px] text-amber-700/80 font-mono font-normal">
+              ({isAuthenticated ? `${(walletBalance || 0).toLocaleString('en-IN')} Cr` : '0 Cr'})
             </span>
           </Link>
 
@@ -408,18 +411,18 @@ export default function Navbar() {
 
         {/* Mobile View: Credits + Hamburger */}
         <div className="flex sm:hidden items-center gap-2">
-          {/* Mobile Credits pill */}
+          {/* Mobile Credits pill: 100 Credits = ₹100 */}
           <Link
             to={isAuthenticated ? getDashboardRoute() : '/login'}
             className="flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-900 border border-amber-300/80 rounded-md text-[11px] font-mono font-bold"
             title={
               isAuthenticated
-                ? `Active Wallet Balance: ${formatCredits(walletBalance || 0)}`
-                : 'Marketplace Credits: 0 MC'
+                ? `Active Wallet Balance: ₹${(walletBalance || 0).toLocaleString('en-IN')} (${(walletBalance || 0).toLocaleString('en-IN')} Credits)`
+                : 'Marketplace Wallet: 100 Credits = ₹100'
             }
           >
             <Coins className="w-3 h-3 text-amber-600 shrink-0" />
-            <span>{isAuthenticated ? formatCredits(walletBalance || 0) : '0 MC'}</span>
+            <span>{isAuthenticated ? `₹${(walletBalance || 0).toLocaleString('en-IN')}` : '₹0'}</span>
           </Link>
 
           <button
@@ -445,7 +448,7 @@ export default function Navbar() {
               </div>
               <div className="flex items-center gap-1 text-xs font-mono font-bold text-amber-900 bg-amber-50 px-2.5 py-1 rounded border border-amber-300/70">
                 <Coins className="w-3.5 h-3.5 text-amber-600" />
-                <span>{isAuthenticated ? formatCredits(walletBalance || 0) : '0 MC'}</span>
+                <span>{isAuthenticated ? `₹${(walletBalance || 0).toLocaleString('en-IN')} (${(walletBalance || 0).toLocaleString('en-IN')} Cr)` : '₹0'}</span>
               </div>
             </div>
 

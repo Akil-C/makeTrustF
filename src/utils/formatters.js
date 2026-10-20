@@ -1,14 +1,47 @@
 import { formatDistanceToNow, format, parseISO, isValid } from 'date-fns'
 
-// ── Credits ────────────────────────────────────────────────────────────────────
+// ── Credits & Currency (100 Credits = 100 Rs / ₹100) ─────────────────────────
 /**
- * Format a credit amount as "10,000 MC".
- * @param {number} amount
- * @returns {string}
+ * Fixed Conversion Rate: 100 Credits = ₹100 (1 Credit = ₹1 INR).
  */
-export function formatCredits(amount) {
-  if (amount === null || amount === undefined || isNaN(Number(amount))) return '0 MC'
-  return `${Number(amount).toLocaleString()} MC`
+export const CREDITS_TO_RUPEES_RATIO = 1
+
+/**
+ * Format a credit amount as "₹10,000 (10,000 Credits)".
+ * Conforms to the standard: 100 Credits = 100 Rs (1 Credit = ₹1 INR).
+ *
+ * @param {number} amount
+ * @param {object} [options]
+ * @param {boolean} [options.compact=false]
+ * @param {boolean} [options.creditsOnly=false]
+ * @param {boolean} [options.rupeesOnly=false]
+ * @returns {string} e.g. "₹10,000 (10,000 Credits)" or "₹10,000"
+ */
+export function formatCredits(amount, options = {}) {
+  if (amount === null || amount === undefined || isNaN(Number(amount))) {
+    return options.compact || options.rupeesOnly ? '₹0' : '₹0 (0 Credits)'
+  }
+  const num = Number(amount)
+  const formatted = num.toLocaleString('en-IN')
+
+  if (options.compact || options.rupeesOnly) {
+    return `₹${formatted}`
+  }
+  if (options.creditsOnly) {
+    return `${formatted} Credits`
+  }
+
+  return `₹${formatted} (${formatted} Credits)`
+}
+
+/**
+ * Direct 1:1 conversion between Marketplace Credits and Indian Rupees.
+ * 100 Credits = 100 Rs.
+ * @param {number} credits
+ * @returns {number}
+ */
+export function creditsToRs(credits) {
+  return Number(credits || 0)
 }
 
 // ── Distance ──────────────────────────────────────────────────────────────────
@@ -172,14 +205,15 @@ export function getOrderStatusColor(status) {
 
 // ── Misc ──────────────────────────────────────────────────────────────────────
 /**
- * Format a price number as a currency-style string.
+ * Format a price number as an Indian Rupee string (₹).
+ * 100 Credits = ₹100 (1 Credit = ₹1 INR).
  * @param {number} amount
- * @param {string} [currency='MC']
+ * @param {string} [currency='₹']
  * @returns {string}
  */
-export function formatPrice(amount, currency = 'MC') {
-  if (amount === null || amount === undefined) return `0 ${currency}`
-  return `${Number(amount).toLocaleString()} ${currency}`
+export function formatPrice(amount, currency = '₹') {
+  if (amount === null || amount === undefined || isNaN(Number(amount))) return `${currency}0`
+  return `${currency}${Number(amount).toLocaleString('en-IN')}`
 }
 
 /**

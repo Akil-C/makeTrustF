@@ -337,10 +337,19 @@ export default function ProductDetailPage() {
               </h1>
 
               {/* Price & Escrow Tag */}
-              <div className="pt-2 flex flex-wrap items-baseline gap-4">
-                <div className="text-3xl sm:text-4xl font-mono font-black text-rose-600">
-                  {formatCredits(product.priceInCredits || product.price)}
+              <div className="pt-2 flex flex-wrap items-baseline gap-3 sm:gap-4">
+                <div className="flex items-baseline gap-2.5">
+                  <span className="text-3xl sm:text-4xl font-mono font-black text-rose-600">
+                    ₹{Number(product.priceInCredits || product.price || 0).toLocaleString('en-IN')}
+                  </span>
+                  <span className="text-sm sm:text-base font-mono font-bold text-slate-500">
+                    ({Number(product.priceInCredits || product.price || 0).toLocaleString('en-IN')} Credits)
+                  </span>
                 </div>
+                <span className="text-[11px] font-bold text-amber-900 bg-amber-50 border border-amber-200/90 rounded-full px-2.5 py-1 font-mono flex items-center gap-1 shadow-xs">
+                  <Coins className="w-3.5 h-3.5 text-amber-600" />
+                  <span>100 Credits = ₹100</span>
+                </span>
                 <span className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1 flex items-center gap-1.5 shadow-xs">
                   <ShieldCheck className="w-4 h-4 text-emerald-600" />
                   <span>Escrow Protected Purchase</span>

@@ -3,7 +3,7 @@ import clsx from 'clsx'
 import { formatCredits } from '../../utils/formatters'
 
 /**
- * Credits display — shows MC amount with coin icon.
+ * Credits display — shows Indian Rupee amount and equivalent Credits (100 Credits = ₹100).
  *
  * @param {{
  *   amount: number,
@@ -11,6 +11,7 @@ import { formatCredits } from '../../utils/formatters'
  *   showIcon?: boolean,
  *   className?: string,
  *   highlight?: boolean,   // bold + primary color
+ *   compact?: boolean,     // show only ₹
  * }} props
  */
 export default function CreditsDisplay({
@@ -19,12 +20,13 @@ export default function CreditsDisplay({
   showIcon  = true,
   className = '',
   highlight = false,
+  compact   = false,
 }) {
   const sizes = {
-    xs: 'text-xs gap-0.5',
+    xs: 'text-xs gap-1',
     sm: 'text-sm gap-1',
-    md: 'text-base gap-1',
-    lg: 'text-lg gap-1.5',
+    md: 'text-base gap-1.5',
+    lg: 'text-lg gap-2',
   }
   const iconSizes = {
     xs: 'w-3 h-3',
@@ -33,20 +35,28 @@ export default function CreditsDisplay({
     lg: 'w-5 h-5',
   }
 
+  const num = Number(amount || 0)
+  const formatted = num.toLocaleString('en-IN')
+
   return (
     <span
       className={clsx(
         'inline-flex items-center font-medium',
         sizes[size],
-        highlight ? 'text-primary-600 font-semibold' : 'text-gray-800',
+        highlight ? 'text-rose-600 font-semibold' : 'text-slate-800',
         className,
       )}
-      title="MarketTrust Credits (demo only)"
+      title="100 Credits = ₹100 (1 Credit = ₹1 INR)"
     >
       {showIcon && (
-        <Coins className={clsx('text-trust-gold shrink-0', iconSizes[size])} />
+        <Coins className={clsx('text-amber-500 shrink-0', iconSizes[size])} />
       )}
-      {formatCredits(amount)}
+      <span className="font-bold">₹{formatted}</span>
+      {!compact && (
+        <span className="text-[11px] font-normal text-slate-500 font-mono">
+          ({formatted} Credits)
+        </span>
+      )}
     </span>
   )
 }

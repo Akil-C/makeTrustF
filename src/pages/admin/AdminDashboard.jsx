@@ -91,7 +91,7 @@ export default function AdminDashboard() {
         <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-xs space-y-2">
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
             <Coins className="w-4 h-4 text-amber-600" />
-            <span>MC CIRCULATION</span>
+            <span>CREDITS CIRCULATION (100 Cr = ₹100)</span>
           </span>
           <p className="text-3xl font-mono font-black text-slate-900">
             {formatCredits(stats.mcCirculation)}

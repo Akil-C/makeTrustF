@@ -527,18 +527,18 @@ export default function HomePage() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
                 <div className="p-4 bg-plaster/5 hairline-all">
                   <div className="furniture-text text-plaster/60 text-[9px] mb-1">BEST OFFER</div>
-                  <div className="font-bodoni text-2xl font-bold text-accent">28,999 MC</div>
-                  <div className="text-[10px] text-plaster/50 mt-1">TechHub Deals</div>
+                  <div className="font-bodoni text-2xl font-bold text-accent">₹28,999</div>
+                  <div className="text-[10px] text-plaster/50 mt-1">28,999 Credits • TechHub Deals</div>
                 </div>
                 <div className="p-4 bg-plaster/5 hairline-all">
                   <div className="furniture-text text-plaster/60 text-[9px] mb-1">AVERAGE OFFER</div>
-                  <div className="font-bodoni text-2xl font-bold text-plaster">30,240 MC</div>
-                  <div className="text-[10px] text-plaster/50 mt-1">Market Average</div>
+                  <div className="font-bodoni text-2xl font-bold text-plaster">₹30,240</div>
+                  <div className="text-[10px] text-plaster/50 mt-1">30,240 Credits • Market Average</div>
                 </div>
                 <div className="p-4 bg-plaster/5 hairline-all">
                   <div className="furniture-text text-plaster/60 text-[9px] mb-1">HIGHEST OFFER</div>
-                  <div className="font-bodoni text-2xl font-bold text-plaster/70">32,499 MC</div>
-                  <div className="text-[10px] text-plaster/50 mt-1">Premium Bundle</div>
+                  <div className="font-bodoni text-2xl font-bold text-plaster/70">₹32,499</div>
+                  <div className="text-[10px] text-plaster/50 mt-1">32,499 Credits • Premium Bundle</div>
                 </div>
                 <div className="p-4 bg-plaster/5 hairline-all">
                   <div className="furniture-text text-plaster/60 text-[9px] mb-1">DELIVERY</div>
@@ -633,19 +633,19 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto space-y-16">
           
           <div className="text-center max-w-3xl mx-auto space-y-4">
-            <div className="furniture-text text-accent">TRANSPARENT ESCROW CREDITS</div>
+            <div className="furniture-text text-accent">TRANSPARENT ESCROW CREDITS (100 CREDITS = ₹100)</div>
             <h3 className="font-bodoni text-3xl sm:text-4xl md:text-5xl font-semibold uppercase leading-tight">
-              A CLEAR CREDIT FLOW. A TRANSPARENT TRANSACTION.
+              A CLEAR CREDIT FLOW. 100 CREDITS = ₹100.
             </h3>
             <p className="text-plaster/70 font-light text-sm md:text-base leading-relaxed">
-              Nexora Marketplace Credits (MC) eliminate credit card chargeback fraud and payment gateway delays. Funds stay safely held in escrow until you inspect and accept your delivery.
+              Nexora Marketplace Credits operate at a fixed 1:1 Rupee valuation where 100 Credits = ₹100 (1 Credit = ₹1 INR). Funds stay safely held in escrow until you inspect and accept your delivery.
             </p>
           </div>
 
           {/* Credit Flow Diagram */}
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             {[
-              { step: '01', title: 'CREDIT BALANCE', desc: 'Wallet is topped up with Marketplace Credits (MC)' },
+              { step: '01', title: '100 CR = ₹100', desc: 'Wallet is topped up with 1:1 Rupee-equivalent Marketplace Credits' },
               { step: '02', title: 'PLACE ORDER', desc: 'Credits are selected at checkout for product purchase' },
               { step: '03', title: 'ESCROW HOLD', desc: 'Funds are securely held by platform escrow system' },
               { step: '04', title: 'DELIVERY', desc: 'Seller ships item & buyer inspects package' },
@@ -873,8 +873,8 @@ export default function HomePage() {
                 a: 'When viewing a product, Nexora compiles active offers from multiple verified sellers. You can compare price, seller level, shipping speed, and warranty options before making your choice.',
               },
               {
-                q: 'What are Marketplace Credits (MC)?',
-                a: 'Marketplace Credits are our secure platform credit system used for instant, fee-free transactions and escrow protection.',
+                q: 'What is the conversion rate for Marketplace Credits?',
+                a: 'Marketplace Credits operate at a fixed conversion rate of 100 Credits = ₹100 (1 Credit = ₹1 INR). Zero exchange markups, zero hidden processing fees.',
               },
               {
                 q: 'How does escrow protection safeguard my purchase?',

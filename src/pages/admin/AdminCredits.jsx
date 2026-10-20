@@ -136,7 +136,7 @@ export default function AdminCredits() {
 
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase">
-                Credit Amount (MC)
+                Credit Amount (100 Credits = ₹100)
               </label>
               <input
                 type="number"
@@ -146,6 +146,11 @@ export default function AdminCredits() {
                 required
                 className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl font-mono text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-900"
               />
+              {amount > 0 && (
+                <span className="text-[11px] font-mono text-slate-500 block mt-1">
+                  Equivalent Value: ₹{Number(amount).toLocaleString('en-IN')} (1 Credit = ₹1 INR)
+                </span>
+              )}
             </div>
 
             <div>

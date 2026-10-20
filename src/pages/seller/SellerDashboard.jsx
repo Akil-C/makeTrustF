@@ -157,7 +157,7 @@ export default function SellerDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-xs space-y-2">
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
-            TOTAL REVENUE (MC)
+            TOTAL REVENUE (100 CREDITS = ₹100)
           </span>
           <p className="text-3xl font-mono font-black text-rose-600">
             {formatCredits(stats.totalRevenue)}

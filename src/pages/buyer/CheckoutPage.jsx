@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Truck,
   Package,
+  Coins,
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import productService from '../../services/productService'
@@ -285,9 +286,14 @@ export default function CheckoutPage() {
           {/* Right Column: Order Calculation & Wallet Summary */}
           <div className="lg:col-span-5 space-y-6">
             <div className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200 shadow-xs space-y-6">
-              <h3 className="font-bold text-base text-slate-900 pb-3 border-b border-slate-100">
-                Payment Summary
-              </h3>
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 className="font-bold text-base text-slate-900">
+                  Payment Summary
+                </h3>
+                <span className="text-[11px] font-mono font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                  100 Credits = ₹100
+                </span>
+              </div>
 
               {/* Cost Breakdown */}
               <div className="space-y-3 text-xs">

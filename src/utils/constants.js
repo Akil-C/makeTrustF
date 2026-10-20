@@ -1,7 +1,10 @@
+// ── Currency & Conversion ──────────────────────────────────────────────────
+export const CREDITS_PER_RUPEE = 1 // 100 Credits = 100 Rs (1 Credit = ₹1 INR)
+
 // ── Demo notice ───────────────────────────────────────────────────────────────
 export const DEMO_DISCLAIMER =
-  'Nexora Marketplace Credits (MC) are demo virtual credits with no real-world monetary value. ' +
-  'They exist solely for demonstration and testing purposes.'
+  'Fixed Exchange: 100 Credits = ₹100 (1 Credit = ₹1 INR). ' +
+  'Nexora Marketplace Credits operate at a 1:1 Rupee valuation for escrow settlement demonstration.'
 
 // ── App info ──────────────────────────────────────────────────────────────────
 export const APP_NAME    = import.meta.env.VITE_APP_NAME ?? 'Nexora'

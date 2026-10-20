@@ -121,7 +121,7 @@ export default function EditProduct() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
-              Price (MC Credits)
+              Price (100 Credits = ₹100)
             </label>
             <input
               type="number"
@@ -130,6 +130,11 @@ export default function EditProduct() {
               required
               className="w-full p-3 rounded-xl border border-slate-300 font-mono font-bold text-sm text-rose-600 outline-none focus:ring-2 focus:ring-slate-900"
             />
+            {price > 0 && (
+              <span className="text-[11px] font-mono text-slate-500 block mt-1">
+                = ₹{Number(price).toLocaleString('en-IN')} (1 Credit = ₹1)
+              </span>
+            )}
           </div>
 
           <div>

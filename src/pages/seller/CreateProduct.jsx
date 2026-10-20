@@ -261,17 +261,22 @@ export default function CreateProduct() {
 
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
-              Price (MC Credits) *
+              Price (100 Credits = ₹100) *
             </label>
             <input
               type="number"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
-              placeholder="24500"
+              placeholder="e.g. 24500"
               required
               min={1}
               className="w-full p-3 rounded-xl border border-slate-300 font-mono font-bold text-sm text-rose-600 outline-none focus:ring-2 focus:ring-slate-900"
             />
+            {price > 0 && (
+              <span className="text-[11px] font-mono text-slate-500 block mt-1">
+                = ₹{Number(price).toLocaleString('en-IN')} (1 Credit = ₹1)
+              </span>
+            )}
           </div>
         </div>
 
