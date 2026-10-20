@@ -9,7 +9,7 @@ if (API_URL.endsWith('/api')) {
 const api = axios.create({
   baseURL: API_URL,
   headers: { 'Content-Type': 'application/json' },
-  timeout: 30000,
+  timeout: 90000,
 })
 
 // ── Request interceptor: attach Bearer token ──────────────────────────────────
@@ -95,6 +95,10 @@ api.interceptors.response.use(
     // 403 – forbidden, redirect to home
     if (error.response?.status === 403) {
       window.location.href = '/'
+    }
+
+    if (error.code === 'ECONNABORTED' || (error.message && error.message.toLowerCase().includes('timeout'))) {
+      error.message = 'The server is taking longer than expected to respond (it may be waking up from free-tier sleep). Please try again in a moment.'
     }
 
     return Promise.reject(error)

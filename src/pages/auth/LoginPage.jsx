@@ -12,6 +12,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [captchaVerified, setCaptchaVerified] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [wakeNotice, setWakeNotice] = useState(false)
   const [error, setError] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
 
@@ -34,6 +35,11 @@ export default function LoginPage() {
     }
 
     setLoading(true)
+    setWakeNotice(false)
+    const timer = setTimeout(() => {
+      setWakeNotice(true)
+    }, 4000)
+
     try {
       const user = await login(email, password, 'simulated-turnstile-token')
       const userName = user?.name || user?.displayName || user?.email || 'User'
@@ -51,6 +57,8 @@ export default function LoginPage() {
       setError(apiError)
       toast.error(apiError)
     } finally {
+      clearTimeout(timer)
+      setWakeNotice(false)
       setLoading(false)
     }
   }
@@ -158,6 +166,12 @@ export default function LoginPage() {
               <span>{loading ? 'AUTHENTICATING...' : 'SIGN IN'}</span>
               <ArrowUpRight className="w-4 h-4" />
             </button>
+
+            {wakeNotice && (
+              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 p-2.5 rounded text-center animate-pulse">
+                Connecting to cloud server... If the server was idle, it may take 30–45s to wake up on the first request.
+              </p>
+            )}
           </form>
 
           {/* Quick Demo Credentials */}
