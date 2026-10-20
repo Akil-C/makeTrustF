@@ -265,10 +265,11 @@ export default function ProductDetailPage() {
 
               {/* Price & Escrow Tag */}
               <div className="pt-2 flex items-baseline gap-4">
-                <div className="font-bodoni text-4xl font-bold text-accent">
+                <div className="font-bodoni text-4xl font-extrabold text-rose-600">
                   {formatCredits(product.priceInCredits || product.price)}
                 </div>
-                <span className="furniture-text text-[10px] text-green-700 bg-green-100 px-2 py-1">
+                <span className="text-xs font-semibold text-emerald-800 bg-emerald-100 border border-emerald-300 rounded-md px-2.5 py-1 flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
                   ESCROW PROTECTED
                 </span>
               </div>
@@ -300,7 +301,7 @@ export default function ProductDetailPage() {
             <div className="space-y-3 pt-2">
               <Link
                 to={`/checkout/${product.id}`}
-                className="w-full bg-accent text-white hover:bg-near-black furniture-text py-4 transition-colors flex items-center justify-center gap-2 text-sm"
+                className="w-full bg-rose-600 text-white hover:bg-slate-900 rounded-lg font-bold py-4 transition-colors flex items-center justify-center gap-2 text-sm shadow-md"
               >
                 <ShoppingBag className="w-4 h-4" />
                 <span>BUY WITH MARKETPLACE CREDITS</span>
@@ -310,7 +311,7 @@ export default function ProductDetailPage() {
                 <button
                   onClick={handleStartChat}
                   disabled={actionLoading}
-                  className="w-full bg-near-black text-plaster hover:bg-accent hover:text-white furniture-text py-3.5 transition-colors flex items-center justify-center gap-2"
+                  className="w-full bg-slate-900 text-white hover:bg-rose-600 rounded-lg font-semibold py-3.5 transition-colors flex items-center justify-center gap-2 text-xs shadow-xs"
                 >
                   <MessageSquare className="w-4 h-4" />
                   <span>CHAT WITH SELLER</span>
@@ -318,10 +319,10 @@ export default function ProductDetailPage() {
 
                 <button
                   onClick={handleWishlistToggle}
-                  className="w-full bg-paper border border-near-black/20 hover:border-near-black furniture-text py-3.5 transition-colors flex items-center justify-center gap-2 text-near-black"
+                  className="w-full bg-white border border-slate-300 hover:border-slate-800 rounded-lg font-semibold py-3.5 transition-colors flex items-center justify-center gap-2 text-xs text-slate-800 shadow-xs"
                 >
-                  <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-accent text-accent' : ''}`} />
-                  <span>{isWishlisted ? 'WISHLISTED' : 'SAVE TO WISHLIST'}</span>
+                  <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-rose-600 text-rose-600' : ''}`} />
+                  <span>{isWishlisted ? 'SAVED' : 'SAVE WISHLIST'}</span>
                 </button>
               </div>
             </div>

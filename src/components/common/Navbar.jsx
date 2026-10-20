@@ -48,29 +48,29 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         
         {/* Left: Brand Logo & Role Badge */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <Link
             to="/"
-            className="font-serif font-black text-2xl sm:text-3xl tracking-tighter text-[#070707] hover:opacity-85 transition-opacity"
+            className="font-sans font-black text-2xl sm:text-3xl tracking-tight text-slate-900 hover:text-rose-600 transition-colors flex items-center gap-1.5"
           >
-            NEXORA
+            <span>NEXORA</span>
           </Link>
 
           {/* Real-time Role Badge */}
           {isAuthenticated && (
             <div className="hidden sm:inline-flex items-center">
               {isAdmin && (
-                <span className="px-2 py-0.5 bg-[#EF6F79]/15 text-[#EF6F79] font-mono font-bold text-[10px] tracking-widest border border-[#EF6F79]/30">
+                <span className="px-2.5 py-0.5 bg-rose-50 text-rose-700 font-sans font-bold text-xs tracking-wide rounded-full border border-rose-200 shadow-xs">
                   ADMIN
                 </span>
               )}
               {isSeller && (
-                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-mono font-bold text-[10px] tracking-widest border border-emerald-300">
+                <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 font-sans font-bold text-xs tracking-wide rounded-full border border-emerald-200 shadow-xs">
                   SELLER
                 </span>
               )}
               {isBuyer && (
-                <span className="px-2 py-0.5 bg-blue-50 text-blue-700 font-mono font-bold text-[10px] tracking-widest border border-blue-200">
+                <span className="px-2.5 py-0.5 bg-blue-50 text-blue-700 font-sans font-bold text-xs tracking-wide rounded-full border border-blue-200 shadow-xs">
                   BUYER
                 </span>
               )}
@@ -79,95 +79,95 @@ export default function Navbar() {
         </div>
 
         {/* Center: Contextual Role Navigation Links (Desktop) */}
-        <nav className="hidden lg:flex items-center gap-5 text-xs font-mono font-semibold tracking-wider">
+        <nav className="hidden lg:flex items-center gap-6 text-sm font-sans font-medium text-slate-700">
           {isAuthenticated ? (
             <>
               {isAdmin && (
                 <>
-                  <Link to="/admin/dashboard" className="text-[#070707]/75 hover:text-[#EF6F79] transition-colors">
-                    DASHBOARD
+                  <Link to="/admin/dashboard" className="text-slate-700 hover:text-rose-600 transition-colors">
+                    Dashboard
                   </Link>
-                  <Link to="/admin/users" className="text-[#070707]/75 hover:text-[#EF6F79] transition-colors">
-                    USERS
+                  <Link to="/admin/users" className="text-slate-700 hover:text-rose-600 transition-colors">
+                    Users
                   </Link>
-                  <Link to="/admin/sellers" className="text-[#070707]/75 hover:text-[#EF6F79] transition-colors">
-                    SELLERS
+                  <Link to="/admin/sellers" className="text-slate-700 hover:text-rose-600 transition-colors">
+                    Sellers
                   </Link>
-                  <Link to="/admin/kyc" className="text-[#070707]/75 hover:text-[#EF6F79] transition-colors">
-                    KYC QUEUE
+                  <Link to="/admin/kyc" className="text-slate-700 hover:text-rose-600 transition-colors">
+                    KYC Queue
                   </Link>
-                  <Link to="/admin/products" className="text-[#070707]/75 hover:text-[#EF6F79] transition-colors">
-                    PRODUCTS
+                  <Link to="/admin/products" className="text-slate-700 hover:text-rose-600 transition-colors">
+                    Products
                   </Link>
-                  <Link to="/admin/orders" className="text-[#070707]/75 hover:text-[#EF6F79] transition-colors">
-                    ORDERS
+                  <Link to="/admin/orders" className="text-slate-700 hover:text-rose-600 transition-colors">
+                    Orders
                   </Link>
-                  <Link to="/admin/disputes" className="text-[#070707]/75 hover:text-[#EF6F79] transition-colors">
-                    DISPUTES
+                  <Link to="/admin/disputes" className="text-slate-700 hover:text-rose-600 transition-colors">
+                    Disputes
                   </Link>
-                  <Link to="/admin/credits" className="text-[#070707]/75 hover:text-[#EF6F79] transition-colors">
-                    CREDITS
+                  <Link to="/admin/credits" className="text-slate-700 hover:text-rose-600 transition-colors">
+                    Credits
                   </Link>
                 </>
               )}
               {isSeller && (
                 <>
-                  <Link to="/seller/dashboard" className="text-[#070707]/75 hover:text-[#070707] transition-colors">
-                    DASHBOARD
+                  <Link to="/seller/dashboard" className="text-slate-700 hover:text-rose-600 transition-colors">
+                    Dashboard
                   </Link>
-                  <Link to="/seller/products" className="text-[#070707]/75 hover:text-[#070707] transition-colors">
-                    MY LISTINGS
+                  <Link to="/seller/products" className="text-slate-700 hover:text-rose-600 transition-colors">
+                    My Listings
                   </Link>
                   <Link to="/seller/products/create" className="text-emerald-700 font-bold hover:text-emerald-900 transition-colors flex items-center gap-1">
-                    <PlusCircle className="w-3.5 h-3.5" /> ADD ITEM
+                    <PlusCircle className="w-3.5 h-3.5" /> Add Listing
                   </Link>
-                  <Link to="/seller/orders" className="text-[#070707]/75 hover:text-[#070707] transition-colors">
-                    ORDERS
+                  <Link to="/seller/orders" className="text-slate-700 hover:text-rose-600 transition-colors">
+                    Orders
                   </Link>
-                  <Link to="/seller/kyc" className="text-[#070707]/75 hover:text-[#070707] transition-colors">
+                  <Link to="/seller/kyc" className="text-slate-700 hover:text-rose-600 transition-colors">
                     KYC
                   </Link>
-                  <Link to="/seller/ai-insights" className="text-[#070707]/75 hover:text-[#070707] transition-colors">
-                    AI INSIGHTS
+                  <Link to="/seller/ai-insights" className="text-slate-700 hover:text-rose-600 transition-colors">
+                    AI Insights
                   </Link>
-                  <Link to="/seller/analytics" className="text-[#070707]/75 hover:text-[#070707] transition-colors">
-                    ANALYTICS
+                  <Link to="/seller/analytics" className="text-slate-700 hover:text-rose-600 transition-colors">
+                    Analytics
                   </Link>
                 </>
               )}
               {isBuyer && (
                 <>
-                  <Link to="/buyer/dashboard" className="text-[#070707]/75 hover:text-[#070707] transition-colors">
-                    DASHBOARD
+                  <Link to="/buyer/dashboard" className="text-slate-700 hover:text-rose-600 transition-colors">
+                    Dashboard
                   </Link>
-                  <Link to="/buyer/orders" className="text-[#070707]/75 hover:text-[#070707] transition-colors">
-                    MY ORDERS
+                  <Link to="/buyer/orders" className="text-slate-700 hover:text-rose-600 transition-colors">
+                    My Orders
                   </Link>
-                  <Link to="/buyer/wishlist" className="text-[#070707]/75 hover:text-[#070707] transition-colors">
-                    WISHLIST
+                  <Link to="/buyer/wishlist" className="text-slate-700 hover:text-rose-600 transition-colors">
+                    Wishlist
                   </Link>
-                  <Link to="/buyer/chat" className="text-[#070707]/75 hover:text-[#070707] transition-colors">
-                    MESSAGES
+                  <Link to="/buyer/chat" className="text-slate-700 hover:text-rose-600 transition-colors">
+                    Messages
                   </Link>
-                  <Link to="/search" className="text-[#070707]/75 hover:text-[#070707] transition-colors">
-                    DISCOVER
+                  <Link to="/search" className="text-slate-700 hover:text-rose-600 transition-colors">
+                    Discover
                   </Link>
                 </>
               )}
             </>
           ) : (
             <>
-              <Link to="/search" className="text-[#070707]/70 hover:text-[#070707] transition-colors">
-                DISCOVER
+              <Link to="/search" className="text-slate-700 hover:text-rose-600 transition-colors">
+                Discover
               </Link>
-              <Link to="/search?compare=true" className="text-[#070707]/70 hover:text-[#070707] transition-colors">
-                COMPARE
+              <Link to="/search?compare=true" className="text-slate-700 hover:text-rose-600 transition-colors">
+                Compare Offers
               </Link>
-              <Link to="/search?type=sellers" className="text-[#070707]/70 hover:text-[#070707] transition-colors">
-                SELLERS
+              <Link to="/search?type=sellers" className="text-slate-700 hover:text-rose-600 transition-colors">
+                Verified Sellers
               </Link>
-              <a href="/#how-it-works" className="text-[#070707]/70 hover:text-[#070707] transition-colors">
-                HOW IT WORKS
+              <a href="/#how-it-works" className="text-slate-700 hover:text-rose-600 transition-colors">
+                How It Works
               </a>
             </>
           )}
@@ -180,7 +180,7 @@ export default function Navbar() {
               {/* Live Wallet Balance */}
               <Link
                 to={isAdmin ? '/admin/credits' : isSeller ? '/seller/dashboard' : '/buyer/dashboard'}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 border border-amber-500/30 font-mono text-xs font-bold transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg text-xs font-bold transition-colors shadow-xs"
                 title="Live Wallet Balance (MarketTrust Credits)"
               >
                 <Coins className="w-3.5 h-3.5 text-amber-600" />
@@ -190,44 +190,44 @@ export default function Navbar() {
               {/* User Dashboard Link */}
               <Link
                 to={getDashboardRoute()}
-                className="furniture-text px-3 py-1.5 border border-[#070707]/20 hover:border-[#070707] text-[#070707] transition-all flex items-center gap-1.5 text-xs"
+                className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:border-slate-800 text-slate-800 font-semibold transition-all flex items-center gap-1.5 text-xs shadow-xs"
               >
-                <LayoutDashboard className="w-3.5 h-3.5" />
-                <span className="font-mono">{(user?.name || user?.displayName || user?.email || 'ACCOUNT').split(' ')[0].toUpperCase()}</span>
+                <LayoutDashboard className="w-3.5 h-3.5 text-slate-500" />
+                <span>{(user?.name || user?.displayName || user?.email || 'Account').split(' ')[0]}</span>
               </Link>
 
               {/* One-click Logout Button */}
               <button
                 onClick={handleLogout}
-                className="furniture-text px-3 py-1.5 border border-[#070707]/20 hover:border-[#EF6F79] hover:text-[#EF6F79] text-[#070707]/70 transition-colors flex items-center gap-1.5 text-xs"
+                className="px-3 py-1.5 rounded-lg border border-slate-300 hover:border-rose-400 hover:bg-rose-50 hover:text-rose-600 text-slate-600 font-medium transition-colors flex items-center gap-1.5 text-xs shadow-xs"
                 title="Sign Out"
               >
                 <LogOut className="w-3.5 h-3.5" />
-                <span>EXIT</span>
+                <span>Exit</span>
               </button>
             </>
           ) : (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <Link
                 to="/login"
-                className="furniture-text text-xs text-[#070707]/75 hover:text-[#070707] transition-colors px-2 py-1"
+                className="text-xs font-semibold text-slate-700 hover:text-slate-900 px-3 py-2 transition-colors"
               >
-                SIGN IN
+                Sign In
               </Link>
               <Link
                 to="/register"
-                className="furniture-text text-xs bg-[#070707] text-[#F1F1ED] hover:bg-[#EF6F79] px-3.5 py-1.5 transition-colors"
+                className="text-xs font-semibold bg-rose-600 text-white hover:bg-rose-700 px-3.5 py-2 rounded-lg transition-colors shadow-xs"
               >
-                CREATE ACCOUNT
+                Create Account
               </Link>
             </div>
           )}
 
           <Link
             to="/search"
-            className="hidden md:flex bg-[#070707] text-[#F1F1ED] hover:bg-[#EF6F79] hover:text-white furniture-text px-3.5 py-1.5 transition-all duration-300 items-center gap-1 text-xs group"
+            className="hidden md:flex bg-slate-900 text-white hover:bg-rose-600 rounded-lg px-3.5 py-2 transition-all duration-300 items-center gap-1.5 text-xs font-semibold group shadow-xs"
           >
-            <span>MARKET</span>
+            <span>Explore Market</span>
             <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
           </Link>
         </div>

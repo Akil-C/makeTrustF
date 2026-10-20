@@ -70,24 +70,24 @@ export default function LoginPage() {
       <main className="py-16 px-4 sm:px-6 lg:px-8 my-auto">
         <DemoDisclaimer className="max-w-md mx-auto mb-8" />
 
-        <div className="max-w-md mx-auto space-y-8 bg-paper p-8 sm:p-10 hairline-all shadow-sm">
+        <div className="max-w-md mx-auto space-y-8 bg-white p-8 sm:p-10 rounded-2xl shadow-sm border border-slate-200">
           
           {/* Header */}
           <div className="text-center space-y-2">
-            <div className="furniture-text text-accent">AUTHENTICATION PORTAL</div>
-            <h1 className="font-bodoni text-3xl font-semibold uppercase tracking-tight text-near-black">
-              SIGN IN TO NEXORA
+            <div className="text-xs font-bold text-rose-600 uppercase tracking-wider">Authentication Portal</div>
+            <h1 className="font-bodoni text-2xl sm:text-3xl font-extrabold uppercase tracking-tight text-slate-900">
+              Sign In to Nexora
             </h1>
-            <p className="text-xs text-near-black/60 font-light">
+            <p className="text-xs text-slate-600">
               Or{' '}
-              <Link to="/register" className="text-accent hover:underline font-medium">
+              <Link to="/register" className="text-rose-600 hover:underline font-semibold">
                 create a new merchant or buyer account
               </Link>
             </p>
           </div>
 
           {error && (
-            <div className="p-4 bg-accent/10 border border-accent/30 text-accent text-xs flex items-center gap-2">
+            <div className="p-3.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2 font-medium">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
@@ -95,65 +95,65 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block furniture-text text-near-black/70 mb-2">
-                EMAIL ADDRESS
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-2">
+                Email Address
               </label>
               <div className="relative flex items-center">
-                <Mail className="w-4 h-4 text-near-black/40 absolute left-3.5" />
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@domain.com"
                   required
-                  className="w-full pl-10 pr-4 py-3 bg-plaster border border-near-black/20 focus:border-accent text-sm text-near-black placeholder-near-black/30 outline-none transition-colors"
+                  className="w-full pl-10 pr-4 py-3 bg-white border border-slate-300 rounded-lg focus:border-rose-500 focus:ring-1 focus:ring-rose-500 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all shadow-xs"
                 />
               </div>
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block furniture-text text-near-black/70">
-                  PASSWORD
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700">
+                  Password
                 </label>
-                <Link to="/forgot-password" className="furniture-text text-[10px] text-accent hover:underline">
-                  FORGOT PASSWORD?
+                <Link to="/forgot-password" className="text-xs font-semibold text-rose-600 hover:underline">
+                  Forgot password?
                 </Link>
               </div>
               <div className="relative flex items-center">
-                <Lock className="w-4 h-4 text-near-black/40 absolute left-3.5" />
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5" />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full pl-10 pr-4 py-3 bg-plaster border border-near-black/20 focus:border-accent text-sm text-near-black placeholder-near-black/30 outline-none transition-colors"
+                  className="w-full pl-10 pr-4 py-3 bg-white border border-slate-300 rounded-lg focus:border-rose-500 focus:ring-1 focus:ring-rose-500 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all shadow-xs"
                 />
               </div>
             </div>
 
             {/* Turnstile Verification */}
-            <div className="p-4 bg-plaster border border-near-black/15 flex items-center justify-between">
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setCaptchaVerified(!captchaVerified)}
-                  className={`w-5 h-5 border flex items-center justify-center transition-colors ${
-                    captchaVerified ? 'bg-accent border-accent text-white' : 'bg-white border-near-black/30'
+                  className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
+                    captchaVerified ? 'bg-rose-600 border-rose-600 text-white' : 'bg-white border-slate-300'
                   }`}
                 >
                   {captchaVerified && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                 </button>
                 <span
-                  className="text-xs text-near-black/80 select-none cursor-pointer font-light"
+                  className="text-xs font-medium text-slate-700 select-none cursor-pointer"
                   onClick={() => setCaptchaVerified(!captchaVerified)}
                 >
                   Verify Cloudflare Turnstile
                 </span>
               </div>
-              <div className="flex items-center gap-1 text-[10px] text-near-black/50 furniture-text">
-                <ShieldCheck className="w-3.5 h-3.5 text-accent" />
+              <div className="flex items-center gap-1 text-xs text-slate-500 font-semibold">
+                <ShieldCheck className="w-4 h-4 text-rose-600" />
                 <span>SECURE</span>
               </div>
             </div>
@@ -161,7 +161,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 bg-near-black text-plaster hover:bg-accent hover:text-white furniture-text transition-colors flex items-center justify-center gap-2"
+              className="w-full py-3.5 bg-slate-900 text-white hover:bg-rose-600 rounded-lg font-bold text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-2 shadow-sm"
             >
               <span>{loading ? 'AUTHENTICATING...' : 'SIGN IN'}</span>
               <ArrowUpRight className="w-4 h-4" />

@@ -260,23 +260,23 @@ export default function HomePage() {
             {/* Quick Search Form inside Hero */}
             <form
               onSubmit={handleSearchSubmit}
-              className="mt-6 max-w-2xl mx-auto bg-white/95 backdrop-blur-md hairline-all p-2 flex flex-col sm:flex-row items-center gap-2 shadow-sm"
+              className="mt-6 max-w-2xl mx-auto bg-white hairline-all p-2 flex flex-col sm:flex-row items-center gap-2 shadow-md rounded-xl border border-slate-200"
             >
               <div className="relative flex-1 w-full flex items-center pl-3">
-                <Search className="w-4 h-4 text-near-black/40 shrink-0" />
+                <Search className="w-4 h-4 text-slate-400 shrink-0" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search products, sellers, categories..."
-                  className="w-full px-3 py-2 text-sm text-near-black placeholder-near-black/40 bg-transparent outline-none font-sans"
+                  className="w-full px-3 py-2 text-sm text-slate-900 placeholder-slate-400 bg-transparent outline-none font-sans"
                 />
               </div>
 
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full sm:w-auto text-xs furniture-text text-near-black/80 bg-transparent py-2 px-3 outline-none cursor-pointer border-t sm:border-t-0 sm:border-l border-near-black/10"
+                className="w-full sm:w-auto text-xs font-semibold text-slate-700 bg-slate-50 py-2.5 px-3 outline-none cursor-pointer border sm:border-0 border-slate-200 rounded-lg"
               >
                 <option value="">ALL CATEGORIES</option>
                 {PRODUCT_CATEGORIES.map((cat) => (
@@ -288,7 +288,7 @@ export default function HomePage() {
 
               <button
                 type="submit"
-                className="w-full sm:w-auto bg-near-black text-plaster hover:bg-accent hover:text-white furniture-text px-6 py-2.5 transition-colors"
+                className="w-full sm:w-auto bg-slate-900 text-white hover:bg-rose-600 font-semibold text-xs px-6 py-2.5 rounded-lg transition-colors shadow-sm"
               >
                 SEARCH
               </button>
