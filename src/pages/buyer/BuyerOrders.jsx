@@ -13,8 +13,6 @@ import {
 import orderService from '../../services/orderService'
 import reviewService from '../../services/reviewService'
 import { formatCredits, formatDate } from '../../utils/formatters'
-import Navbar from '../../components/common/Navbar'
-import Footer from '../../components/common/Footer'
 import Modal from '../../components/common/Modal'
 import StarRating from '../../components/common/StarRating'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
@@ -130,10 +128,7 @@ export default function BuyerOrders() {
       : orders.filter((o) => o.status === selectedStatus)
 
   return (
-    <div className="min-h-screen bg-plaster text-near-black flex flex-col justify-between">
-      <Navbar />
-
-      <main className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-8">
+    <div className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-8">
         <DemoDisclaimer />
 
         {/* Page Header */}
@@ -292,9 +287,6 @@ export default function BuyerOrders() {
           </form>
         </Modal>
 
-      </main>
-
-      <Footer />
     </div>
   )
 }

@@ -17,8 +17,6 @@ import orderService from '../../services/orderService'
 import wishlistService from '../../services/wishlistService'
 import walletService from '../../services/walletService'
 import { formatCredits, formatDate, getOrderStatusColor, formatOrderStatus } from '../../utils/formatters'
-import Navbar from '../../components/common/Navbar'
-import Footer from '../../components/common/Footer'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
 
 const MOCK_ORDERS = [
@@ -82,10 +80,7 @@ export default function BuyerDashboard() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-plaster text-near-black flex flex-col justify-between">
-      <Navbar />
-
-      <main className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-10">
+    <div className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-10">
         <DemoDisclaimer />
 
         {/* Dashboard Header */}
@@ -184,12 +179,8 @@ export default function BuyerDashboard() {
                 </div>
               </div>
             ))}
-          </div>
         </div>
-
-      </main>
-
-      <Footer />
+      </div>
     </div>
   )
 }
