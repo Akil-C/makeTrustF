@@ -46,6 +46,14 @@ export default {
           DEFAULT: '#2F5BFF',
           dark: '#7C97FF',
         },
+        editorial: {
+          ground: '#E7E3DA',
+          'ground-sec': '#DCD7CB',
+          ink: '#1A1917',
+          'ink-sec': '#4A4741',
+          muted: '#6E6A61',
+          signal: '#9B3418',
+        },
       },
       transitionTimingFunction: {
         tech: 'cubic-bezier(0.16, 1, 0.3, 1)',

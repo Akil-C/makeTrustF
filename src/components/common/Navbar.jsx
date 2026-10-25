@@ -109,7 +109,7 @@ export default function Navbar() {
     }`
 
   return (
-    <header className="sticky top-0 z-50 bg-[#F1F1ED]/95 backdrop-blur-md border-b border-slate-200/90 shadow-xs transition-colors duration-200 font-sans">
+    <header className="sticky top-0 z-50 bg-[#E7E3DA]/90 backdrop-blur-[14px] border-b border-[rgba(26,25,23,0.16)] text-[#1A1917] shadow-none transition-colors duration-200 font-sans">
       {/* Primary Top Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3 lg:gap-6">
         
@@ -120,10 +120,10 @@ export default function Navbar() {
             className="flex items-center gap-2 group transition-all"
             aria-label="Nexora Homepage"
           >
-            <div className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center font-black text-sm tracking-tighter shadow-xs group-hover:bg-rose-600 transition-colors">
+            <div className="w-8 h-8 rounded-none bg-[#1A1917] text-[#E7E3DA] flex items-center justify-center font-black text-sm tracking-tighter shadow-none group-hover:bg-[#9B3418] transition-colors">
               N
             </div>
-            <span className="font-sans font-black text-xl sm:text-2xl tracking-tight text-slate-900 group-hover:text-rose-600 transition-colors">
+            <span className="font-sans font-black text-xl sm:text-2xl tracking-tight text-[#1A1917] group-hover:text-[#9B3418] transition-colors">
               NEXORA
             </span>
           </Link>

@@ -6,18 +6,13 @@ import {
   ShieldCheck,
   ArrowRight,
   Heart,
-  Star,
   ChevronRight,
   ArrowUpRight,
   Lock,
-  Eye,
   Truck,
   Check,
-  Shield,
-  Layers,
   Activity,
-  SlidersHorizontal,
-  ExternalLink,
+  Compass,
 } from 'lucide-react'
 import productService from '../../services/productService'
 import wishlistService from '../../services/wishlistService'
@@ -25,7 +20,6 @@ import { PRODUCT_CATEGORIES } from '../../utils/constants'
 import { formatCredits } from '../../utils/formatters'
 import Navbar from '../../components/common/Navbar'
 import Footer from '../../components/common/Footer'
-import StarRating from '../../components/common/StarRating'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
 import { CURATED_PRODUCTS, getProductImage } from '../../utils/productsData'
@@ -77,7 +71,7 @@ const COMPARISON_DATASETS = [
   {
     id: 'sony',
     specCode: 'NX-ELEC-0084',
-    title: 'Sony WH-1000XM5 Noise Canceling',
+    title: 'Sony WH-1000XM5 Wireless Headphones',
     subtitle: 'Integrated V1 Processor / 30-Hour Battery / Silver',
     category: 'Electronics',
     image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=900&auto=format&fit=crop&q=80',
@@ -152,66 +146,64 @@ const COMPARISON_DATASETS = [
   },
 ]
 
-// Escrow transaction protocol stages
-const PROTOCOL_STAGES = [
+// Escrow transaction study stages
+const TRANSACTION_STUDY_STAGES = [
   {
     step: '01',
     code: 'STAGE_AUTH',
-    title: 'ORDER AUTHORIZATION',
-    heading: 'Cryptographic Credit Authorization',
-    summary:
-      'Buyer authorizes purchase value using 1:1 Rupee-equivalent Marketplace Credits (100 Credits = ₹100 INR). Zero credit card exposure to counterparty.',
-    detail:
-      'Funds are debited into a cryptographic custody buffer. The counterparty never receives payment details, phone numbers, or bank account numbers.',
+    title: 'CREDIT AUTHORIZATION',
+    headline: '1:1 Rupee Credit Reservation',
+    description:
+      'Buyer deposits 100 Credits = ₹100 INR into the isolated order custody ledger. Zero counterparty bank exposure.',
     badge: 'PROTOCOL LOCK // ACTIVE',
+    telemetry: 'LEDGER_STATUS // RESERVED',
+    hash: '0x4F8B2A91D',
   },
   {
     step: '02',
-    code: 'STAGE_HOLD',
-    title: 'ESCROW VAULT LOCK',
-    heading: '100% Funds Isolated in Cold Escrow',
-    summary:
-      'Platform escrow custody locks 100% of order value. Seller is verified and instructed to prepare dispatch with guaranteed payout protection.',
-    detail:
-      'Seller receives a cryptographically signed dispatch directive. Payout is guaranteed upon proof of delivery and buyer acceptance.',
-    badge: 'CUSTODY STATUS // ISOLATED',
+    code: 'STAGE_CUSTODY',
+    title: 'COLD ESCROW VAULT',
+    headline: 'Isolated Platform Protection',
+    description:
+      'Funds are securely held in platform escrow custody. Seller is cryptographically authorized to package and dispatch.',
+    badge: 'VAULT STATUS // FROZEN',
+    telemetry: 'ESCROW_BALANCE // 145,000 MC',
+    hash: '0x992E77C1B',
   },
   {
     step: '03',
-    code: 'STAGE_TRANSIT',
-    title: 'TRACKED COURIER / SAFEPOINT',
-    heading: 'GPS-Tracked Dispatch or In-Person SafePoint',
-    summary:
-      'Seller dispatches via verified courier with real-time waypoint tracking, or schedules a safe-exchange at a verified public inspection hub.',
-    detail:
-      'Integrated tracking numbers attach automatically to the transaction audit trail. Automated SMS & WebSocket notifications update both parties.',
-    badge: 'TELEMETRY // DISPATCHED',
+    code: 'STAGE_DISPATCH',
+    title: 'VERIFIED COURIER TRANSIT',
+    headline: 'Waypoint Telemetry Active',
+    description:
+      'Seller ships via verified courier with integrated tracking. Automated state updates broadcast to buyer and seller.',
+    badge: 'LOGISTICS // IN_TRANSIT',
+    telemetry: 'TRACKING // TRK-88291039',
+    hash: '0x331D8804A',
   },
   {
     step: '04',
-    code: 'STAGE_INSPECT',
-    title: 'DOORSTEP INSPECTION',
-    heading: 'Buyer Inspection & Specification Verification',
-    summary:
-      'Package arrives. Buyer is granted a comprehensive 48-hour inspection window to examine cosmetic condition, hardware specs, and serial integrity.',
-    detail:
-      'If the product does not match the listing specifications or exhibits unmentioned defects, buyer triggers an instantaneous dispute freeze.',
-    badge: 'INSPECTION // 48H WINDOW',
-  },
-  {
-    step: '05',
-    code: 'STAGE_RELEASE',
-    title: 'CONFIRMATION & DISBURSEMENT',
-    heading: 'Irrevocable Release to Merchant Wallet',
-    summary:
-      'Buyer taps "Confirm Delivery" on Nexora. The escrow vault unlocks immediately, releasing 100% of net proceeds to the seller wallet.',
-    detail:
-      'Both parties build immutable on-chain reputation: buyer receives Trust Level points, seller receives verified review qualification.',
-    badge: 'SETTLEMENT // COMPLETED',
+    code: 'STAGE_SETTLE',
+    title: 'DOORSTEP ACCEPTANCE',
+    headline: 'Buyer Inspection & Disbursement',
+    description:
+      'Buyer inspects physical condition within 48h window. Tapping "Confirm Delivery" irrevocably disburses payout to merchant.',
+    badge: 'SETTLEMENT // RELEASED',
+    telemetry: 'DISBURSEMENT // COMPLETE',
+    hash: '0x77EA0129F',
   },
 ]
 
 export default function HomePage() {
+  const [scrollY, setScrollY] = useState(0)
+  const [mounted, setMounted] = useState(false)
+
+  // Transaction study state
+  const [studyStage, setStudyStage] = useState(0)
+  const [studyProgress, setStudyProgress] = useState(0)
+  const studyRef = useRef(null)
+
+  // Catalog & Search state
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
   const [featuredProducts, setFeaturedProducts] = useState(MOCK_FEATURED)
@@ -220,23 +212,57 @@ export default function HomePage() {
   const [wishlistIds, setWishlistIds] = useState(new Set())
   const navigate = useNavigate()
 
-  // Interactive Comparison Matrix State
+  // Multi-offer comparison state
   const [activeCompIdx, setActiveCompIdx] = useState(0)
 
-  // Interactive Escrow Protocol Lifecycle State
-  const [activeProtocolStage, setActiveProtocolStage] = useState(0)
-  const [isAutoProgressing, setIsAutoProgressing] = useState(true)
+  // Check prefers-reduced-motion
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
 
-  // Auto-cycle protocol stages for visual demonstration
   useEffect(() => {
-    if (!isAutoProgressing) return
-    const timer = setInterval(() => {
-      setActiveProtocolStage((prev) => (prev >= PROTOCOL_STAGES.length - 1 ? 0 : prev + 1))
-    }, 4500)
-    return () => clearInterval(timer)
-  }, [isAutoProgressing])
+    // Check reduced motion
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      setPrefersReducedMotion(window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+    }
 
-  // Load products with catalog merging & verified photography
+    // Mount reveal triggered via requestAnimationFrame as required
+    const rafId = requestAnimationFrame(() => {
+      setMounted(true)
+    })
+
+    let ticking = false
+    const handleScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          setScrollY(window.scrollY)
+
+          // Computed study scroll calculation
+          if (studyRef.current) {
+            const rect = studyRef.current.getBoundingClientRect()
+            const total = rect.height - window.innerHeight
+            if (total > 0) {
+              const current = -rect.top
+              const p = Math.max(0, Math.min(1, current / total))
+              setStudyProgress(p)
+              const step = Math.min(3, Math.floor(p * 4))
+              setStudyStage(step)
+            }
+          }
+          ticking = false
+        })
+        ticking = true
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll()
+
+    return () => {
+      cancelAnimationFrame(rafId)
+      window.removeEventListener('scroll', handleScroll)
+    }
+  }, [])
+
+  // Load catalog items with fallback
   useEffect(() => {
     async function loadData() {
       try {
@@ -303,7 +329,7 @@ export default function HomePage() {
     }
   }
 
-  // Filter catalog items by selected category chip
+  // Filter catalog items by domain category
   const filteredProducts = activeCategoryFilter === 'ALL'
     ? featuredProducts
     : featuredProducts.filter((p) => {
@@ -311,479 +337,294 @@ export default function HomePage() {
         return cat.includes(activeCategoryFilter.toUpperCase())
       })
 
+  // Scroll factor for hero split-wordmark (over 0 to 600px of scroll)
+  const heroFactor = Math.min(1, Math.max(0, scrollY / 600))
+  const upperY = prefersReducedMotion ? 0 : -heroFactor * 20
+  const upperX = prefersReducedMotion ? 0 : heroFactor * 1.5
+  const lowerY = prefersReducedMotion ? 0 : heroFactor * 20
+  const lowerX = prefersReducedMotion ? 0 : heroFactor * 1.5
+  const subjectY = prefersReducedMotion ? 0 : -heroFactor * 24
+  const subjectScale = prefersReducedMotion ? 1 : 1 + heroFactor * 0.12
+
   const currentComp = COMPARISON_DATASETS[activeCompIdx]
-  const currentStage = PROTOCOL_STAGES[activeProtocolStage]
+  const currentStudyStage = TRANSACTION_STUDY_STAGES[studyStage]
 
   return (
-    <div className="min-h-screen bg-[#EFEFEE] text-[#0D0D0F] font-sans selection:bg-[#0D0D0F] selection:text-[#EFEFEE]">
+    <div className="min-h-screen bg-[#E7E3DA] text-[#1A1917] font-sans selection:bg-[#1A1917] selection:text-[#E7E3DA]">
       <Navbar />
 
       {/* ── TECHNICAL STATUS BAR ──────────────────────────────────────────────── */}
-      <aside aria-label="System status" className="w-full bg-[#E4E4E2] border-b border-[#0D0D0F]/12 text-[#6E6F76] text-[10px] tracking-[0.2em] font-medium uppercase px-4 sm:px-8 py-2 overflow-x-auto scrollbar-hide">
+      <aside aria-label="System status" className="w-full bg-[#DCD7CB] border-b border-[rgba(26,25,23,0.16)] text-[#6E6A61] text-[10px] tracking-[0.2em] font-medium uppercase px-4 sm:px-8 py-2 overflow-x-auto scrollbar-hide">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-6 whitespace-nowrap">
           <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1.5 text-[#0D0D0F] font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#2F5BFF] animate-pulse" />
-              NEXORA PROTOCOL // V2.4.0
+            <span className="flex items-center gap-1.5 text-[#1A1917] font-bold">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#9B3418] animate-pulse" />
+              NEXORA ARCHITECTURE // V2.5.0
             </span>
-            <span className="text-[#0D0D0F]/20">/</span>
-            <span>ESCROW LEDGER // ACTIVE</span>
-            <span className="text-[#0D0D0F]/20">/</span>
-            <span>SETTLEMENT // 100 CREDITS = ₹100 INR</span>
+            <span className="text-[rgba(26,25,23,0.2)]">/</span>
+            <span>ESCROW LEDGER // CUSTODY ACTIVE</span>
+            <span className="text-[rgba(26,25,23,0.2)]">/</span>
+            <span>STANDARD // 100 CREDITS = ₹100 INR</span>
           </div>
-          <div className="flex items-center gap-4 text-[#43444A]">
+          <div className="flex items-center gap-4 text-[#4A4741]">
             <span>NODE // BENGALURU (12.9716° N, 77.5946° E)</span>
-            <span className="text-[#0D0D0F]/20">/</span>
-            <span className="text-[#2F5BFF] font-semibold">SECURITY HASH // SHA-256 VERIFIED</span>
+            <span className="text-[rgba(26,25,23,0.2)]">/</span>
+            <span className="text-[#9B3418] font-bold">STATUS // VERIFIED</span>
           </div>
         </div>
       </aside>
 
       <DemoDisclaimer />
 
-      {/* ── HERO SECTION: TYPOGRAPHIC EDITORIAL STAGE ─────────────────────────── */}
-      <section className="relative border-b border-[#0D0D0F]/12 overflow-hidden bg-[#EFEFEE] pt-8 sm:pt-14 pb-12 sm:pb-20 px-4 sm:px-8">
-        <div className="max-w-7xl mx-auto space-y-10 sm:space-y-14">
+      {/* ── HERO SECTION: SPLIT WORDMARK & EDITORIAL STAGE ────────────────────── */}
+      <section className="relative min-h-[calc(100vh-80px)] border-b border-[rgba(26,25,23,0.16)] overflow-hidden bg-[#E7E3DA] flex flex-col justify-between p-4 sm:p-8 md:p-12">
+        <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center flex-1 my-auto">
           
-          {/* Top Corner Metadata Anchors */}
-          <div className="flex items-center justify-between text-[11px] tracking-[0.22em] text-[#6E6F76] uppercase font-semibold border-b border-[#0D0D0F]/12 pb-3">
-            <div className="flex items-center gap-2">
-              <span className="w-1 h-1 bg-[#2F5BFF]" />
-              <span>COMMERCE ARCHITECTURE // 01</span>
-            </div>
-            <div className="hidden sm:flex items-center gap-6">
-              <span>ZERO COUNTERPARTY FRAUD</span>
-              <span className="text-[#0D0D0F]/20">/</span>
-              <span>KYC CERTIFIED MERCHANTS</span>
-            </div>
-            <div className="font-mono text-[#0D0D0F]">
-              INDEX // 2026.10
-            </div>
-          </div>
-
-          {/* Massive Typographic Headline Lockup */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-2 text-[11px] font-bold tracking-[0.25em] text-[#2F5BFF] uppercase">
-              <span className="w-1.5 h-1.5 bg-[#2F5BFF]" />
-              <span>THE TRUST-FIRST MARKETPLACE</span>
+          {/* Left Column: Typographic Messaging & Console (7 cols) */}
+          <div className="lg:col-span-7 space-y-6 sm:space-y-8 z-20">
+            
+            {/* Small Technical Eyebrow */}
+            <div className="flex items-center gap-3 text-[11px] font-bold tracking-[0.25em] text-[#6E6A61] uppercase border-b border-[rgba(26,25,23,0.16)] pb-3">
+              <span className="w-1.5 h-1.5 bg-[#9B3418]" />
+              <span className="text-[#1A1917]">NEXORA / MARKETPLACE</span>
+              <span className="text-[rgba(26,25,23,0.2)]">/</span>
+              <span>SYSTEM 01 // TRUST LAYER</span>
             </div>
 
-            <h1 className="text-4xl sm:text-6xl md:text-8xl lg:text-[7.5rem] xl:text-[8.5rem] font-extrabold tracking-tighter leading-[0.9] text-[#0D0D0F] uppercase select-none">
-              BUY WITH<br />
-              <span className="inline-block text-[#0D0D0F]">CONFIDENCE.</span><br />
-              <span className="inline-block text-[#43444A]">SELL WITHOUT</span><br />
-              THE RISK.
-            </h1>
-
-            {/* Concise Supporting Statement & Hairline Accent */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-4 border-t border-[#0D0D0F]/12 items-baseline">
-              <div className="lg:col-span-7">
-                <p className="text-sm sm:text-base md:text-lg text-[#43444A] leading-relaxed max-w-2xl font-normal">
-                  Nexora is an engineered marketplace architecture built for verified high-value transactions. Every transaction is held in cold cryptographic escrow until confirmed at your doorstep. Zero counterparty risk. Fixed 100 Credits = ₹100 valuation.
-                </p>
-              </div>
-
-              {/* Action Buttons: Sharp Rectangular Editorial CTAs */}
-              <div className="lg:col-span-5 flex flex-col sm:flex-row items-stretch sm:items-center justify-start lg:justify-end gap-3">
-                <Link
-                  to="/search"
-                  className="group relative bg-[#0D0D0F] text-[#EFEFEE] px-6 sm:px-8 py-4 rounded-none font-bold text-xs tracking-[0.15em] uppercase transition-all duration-300 hover:bg-[#43444A] flex items-center justify-center gap-2 border border-[#0D0D0F]"
-                >
-                  <span>EXPLORE LISTINGS</span>
-                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-                </Link>
-
-                <Link
-                  to="/register"
-                  className="group relative bg-transparent text-[#0D0D0F] px-6 sm:px-8 py-4 rounded-none font-bold text-xs tracking-[0.15em] uppercase transition-all duration-300 hover:bg-[#0D0D0F] hover:text-[#EFEFEE] border border-[#0D0D0F] flex items-center justify-center gap-2"
-                >
-                  <span>BECOME A SELLER</span>
-                  <span className="text-[#2F5BFF] group-hover:text-[#7C97FF]">→</span>
-                </Link>
-              </div>
-            </div>
-          </div>
-
-          {/* Architectural Search Console */}
-          <div className="border border-[#0D0D0F]/12 bg-[#E4E4E2] p-4 sm:p-6 space-y-4 rounded-none">
-            <div className="flex items-center justify-between text-[10px] tracking-[0.2em] font-bold text-[#6E6F76] uppercase border-b border-[#0D0D0F]/12 pb-2">
-              <span className="flex items-center gap-2">
-                <Search className="w-3.5 h-3.5 text-[#0D0D0F]" />
-                SEARCH CONSOLE // REAL-TIME DISCOVERY
-              </span>
-              <span className="hidden sm:inline">PAN-INDIA VERIFIED CATALOG</span>
+            {/* Oversized Editorial Headline */}
+            <div className="space-y-2">
+              <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6.2rem] font-black tracking-tighter leading-[0.88] text-[#1A1917] uppercase select-none">
+                BUY WITH<br />
+                CONFIDENCE.<br />
+                <span className="text-[#4A4741]">SELL WITH</span><br />
+                <span className="italic font-serif font-normal text-[#9B3418]">ACCOUNTABILITY.</span>
+              </h1>
             </div>
 
+            {/* Concise Supporting Statement */}
+            <p className="text-sm sm:text-base text-[#4A4741] leading-relaxed max-w-xl font-normal">
+              A marketplace architecture designed around cryptographic custody and verified merchant accountability. Every transaction is backed by cold escrow protection. Fixed valuation: 100 Credits = ₹100 INR.
+            </p>
+
+            {/* Action Buttons: Sharp Rectangular Editorial CTAs */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
+              <Link
+                to="/search"
+                className="group relative bg-[#1A1917] text-[#E7E3DA] px-7 py-4 rounded-none font-bold text-xs tracking-[0.18em] uppercase transition-all duration-300 hover:bg-[#4A4741] flex items-center justify-center gap-2 border border-[#1A1917]"
+              >
+                <span>EXPLORE MARKETPLACE</span>
+                <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+              </Link>
+
+              <Link
+                to="/register"
+                className="group relative bg-transparent text-[#1A1917] px-7 py-4 rounded-none font-bold text-xs tracking-[0.18em] uppercase transition-all duration-300 hover:bg-[#1A1917] hover:text-[#E7E3DA] border border-[#1A1917] flex items-center justify-center gap-2"
+              >
+                <span>BECOME A SELLER</span>
+                <span className="text-[#9B3418] group-hover:text-[#E7E3DA]">→</span>
+              </Link>
+            </div>
+
+            {/* Minimalist Architectural Search Console */}
             <form
               onSubmit={handleSearchSubmit}
-              className="flex flex-col md:flex-row items-stretch gap-2"
+              className="border border-[rgba(26,25,23,0.16)] bg-[#DCD7CB] p-2 flex flex-col sm:flex-row items-stretch gap-2 max-w-xl"
             >
-              <div className="relative flex-1 bg-[#EFEFEE] border border-[#0D0D0F]/12 flex items-center px-4 py-3">
-                <Search className="w-4 h-4 text-[#6E6F76] shrink-0 mr-3" />
+              <div className="relative flex-1 bg-[#E7E3DA] border border-[rgba(26,25,23,0.16)] flex items-center px-3 py-2.5">
+                <Search className="w-3.5 h-3.5 text-[#6E6A61] shrink-0 mr-2.5" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Query products, specifications, brands, or verified sellers..."
-                  className="w-full bg-transparent text-[#0D0D0F] placeholder-[#6E6F76] text-xs sm:text-sm font-medium outline-none"
+                  placeholder="Query products, specifications, verified sellers..."
+                  className="w-full bg-transparent text-[#1A1917] placeholder-[#6E6A61] text-xs font-medium outline-none"
                 />
               </div>
 
-              <div className="w-full md:w-56 bg-[#EFEFEE] border border-[#0D0D0F]/12 flex items-center px-3 py-3">
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full bg-transparent text-[#0D0D0F] text-xs font-bold uppercase tracking-wider outline-none cursor-pointer"
-                >
-                  <option value="">ALL DOMAINS</option>
-                  {PRODUCT_CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat.toUpperCase()}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full sm:w-auto bg-[#E7E3DA] border border-[rgba(26,25,23,0.16)] px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-[#1A1917] outline-none cursor-pointer"
+              >
+                <option value="">ALL DOMAINS</option>
+                {PRODUCT_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat.toUpperCase()}
+                  </option>
+                ))}
+              </select>
 
               <button
                 type="submit"
-                className="bg-[#0D0D0F] text-[#EFEFEE] hover:bg-[#43444A] px-8 py-3 text-xs font-bold tracking-[0.18em] uppercase transition-colors shrink-0 flex items-center justify-center gap-2 border border-[#0D0D0F]"
+                className="bg-[#1A1917] text-[#E7E3DA] hover:bg-[#4A4741] px-5 py-2.5 text-xs font-bold tracking-[0.15em] uppercase transition-colors shrink-0 flex items-center justify-center gap-1.5"
               >
                 <span>SEARCH</span>
-                <span className="text-[#2F5BFF]">/</span>
                 <ArrowUpRight className="w-3.5 h-3.5" />
               </button>
             </form>
 
-            {/* Technical Category Index Chips */}
-            <div className="flex flex-wrap items-center gap-2 pt-1 text-[10px] tracking-[0.16em] uppercase font-semibold">
-              <span className="text-[#6E6F76] mr-1">DOMAINS //</span>
-              {['Electronics', 'Vehicles', 'Musical Instruments', 'Furniture', 'Fashion', 'Collectibles'].map((cat, idx) => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => navigate(`/search?category=${encodeURIComponent(cat)}`)}
-                  className="border border-[#0D0D0F]/12 bg-[#EFEFEE] hover:bg-[#0D0D0F] hover:text-[#EFEFEE] px-2.5 py-1 text-[#43444A] transition-colors"
-                >
-                  0{idx + 1} / {cat}
-                </button>
-              ))}
-            </div>
           </div>
 
-          {/* Bottom Hero Tri-Column Technical Straps */}
-          <div className="grid grid-cols-1 md:grid-cols-3 border-t border-[#0D0D0F]/12 divide-y md:divide-y-0 md:divide-x divide-[#0D0D0F]/12 pt-6">
-            <div className="py-4 md:py-0 md:pr-6 space-y-1.5">
-              <div className="text-[10px] font-bold tracking-[0.2em] text-[#2F5BFF] uppercase">
-                01 // MULTI-MERCHANT AGGREGATION
-              </div>
-              <p className="text-xs text-[#43444A] leading-relaxed">
-                Single product page unites competing offers from multiple verified merchants. Compare price, warranty, and seller reliability in one view.
-              </p>
+          {/* Right Column: SIGNATURE SPLIT NEXORA WORDMARK & CUT-OUT SUBJECT (5 cols) */}
+          <div className="lg:col-span-5 relative flex flex-col items-end justify-center min-h-[360px] sm:min-h-[460px] lg:min-h-[580px] select-none py-6">
+            
+            {/* Upper Wordmark Line: NEX */}
+            <div
+              className="text-right text-[#1A1917] font-black tracking-tighter uppercase leading-[0.78] z-0 transition-transform duration-75 ease-out select-none"
+              style={{
+                fontSize: 'clamp(5rem, 16vw, 12rem)',
+                transform: mounted
+                  ? `translateY(${upperY}vh) translateX(${upperX}vw)`
+                  : 'translateY(-24px)',
+                opacity: mounted ? 1 : 0,
+                transitionProperty: mounted && !prefersReducedMotion ? 'none' : 'all',
+                transitionDuration: '1.1s',
+                transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
+              }}
+            >
+              NEX
             </div>
 
-            <div className="py-4 md:py-0 md:px-6 space-y-1.5">
-              <div className="text-[10px] font-bold tracking-[0.2em] text-[#2F5BFF] uppercase">
-                02 // CRYPTOGRAPHIC ESCROW VAULT
-              </div>
-              <p className="text-xs text-[#43444A] leading-relaxed">
-                100% of purchase credits remain in cold platform custody. Funds are only disbursed after physical receipt and 48-hour buyer verification.
-              </p>
+            {/* Cut-Out Subject Passing Through the Gap */}
+            <div
+              className="relative my-2 sm:my-3 z-10 flex items-center justify-center transition-transform duration-75 ease-out"
+              style={{
+                transform: mounted
+                  ? `translateY(${subjectY}vh) scale(${subjectScale})`
+                  : 'translateY(12px) scale(0.92)',
+                opacity: mounted ? 1 : 0,
+                transitionProperty: mounted && !prefersReducedMotion ? 'none' : 'all',
+                transitionDuration: '1.2s',
+                transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
+              }}
+            >
+              <img
+                src="https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=1200&auto=format&fit=crop&q=80"
+                alt="Precision Verified Marketplace Exhibit"
+                className="object-contain mix-blend-multiply drop-shadow-2xl transition-all"
+                style={{
+                  height: 'min(36vh, 290px)',
+                  width: 'auto',
+                  maxWidth: '90vw',
+                }}
+              />
+              {/* Construction Crosshair Overlay */}
+              <span className="absolute top-0 right-0 font-mono text-[8px] text-[#6E6A61] tracking-widest">+ [FIG. 01]</span>
+              <span className="absolute bottom-0 left-0 font-mono text-[8px] text-[#6E6A61] tracking-widest">+ [ESCROW_VAULT]</span>
             </div>
 
-            <div className="py-4 md:py-0 md:pl-6 space-y-1.5">
-              <div className="text-[10px] font-bold tracking-[0.2em] text-[#2F5BFF] uppercase">
-                03 // IDENTITY & BIOMETRIC KYC
-              </div>
-              <p className="text-xs text-[#43444A] leading-relaxed">
-                Zero anonymous merchants. Every seller submits government ID certification, address verification, and automated trust metrics.
-              </p>
+            {/* Lower Wordmark Line: ORA */}
+            <div
+              className="text-right text-[#1A1917] font-black tracking-tighter uppercase leading-[0.78] z-20 transition-transform duration-75 ease-out select-none"
+              style={{
+                fontSize: 'clamp(5rem, 16vw, 12rem)',
+                transform: mounted
+                  ? `translateY(${lowerY}vh) translateX(${lowerX}vw)`
+                  : 'translateY(24px)',
+                opacity: mounted ? 1 : 0,
+                transitionProperty: mounted && !prefersReducedMotion ? 'none' : 'all',
+                transitionDuration: '1.1s',
+                transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
+              }}
+            >
+              ORA
             </div>
+
           </div>
 
         </div>
+
+        {/* Hero Bottom Hairline Coordinates & Straps */}
+        <div className="max-w-7xl mx-auto w-full pt-8 border-t border-[rgba(26,25,23,0.16)] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-[10px] font-mono text-[#6E6A61] uppercase tracking-[0.2em]">
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 bg-[#9B3418]" />
+            <span>NEXORA ESCROW CUSTODY PROTOCOL // VERIFIED DEPLOYMENT</span>
+          </div>
+          <div className="flex items-center gap-6 text-[#4A4741]">
+            <span>100 CREDITS = ₹100 INR</span>
+            <span>DOORSTEP 48H INSPECTION</span>
+            <span>ZERO ANONYMOUS SELLERS</span>
+          </div>
+        </div>
       </section>
 
-      {/* ── SECTION 01: TRUST ARCHITECTURE (DARK TECHNICAL STAGE) ─────────────── */}
-      <section className="bg-[#0D0D0F] text-[#EFEFEE] border-b border-[#0D0D0F] py-16 sm:py-24 px-4 sm:px-8">
+      {/* ── SECTION 01 — TRUST ARCHITECTURE ──────────────────────────────────── */}
+      <section id="trust" className="py-20 sm:py-28 px-4 sm:px-8 border-b border-[rgba(26,25,23,0.16)] bg-[#E7E3DA]">
         <div className="max-w-7xl mx-auto space-y-14">
           
-          {/* Header Metadata Anchor */}
-          <div className="flex items-center justify-between text-[11px] tracking-[0.22em] text-[#6E6F76] uppercase font-semibold border-b border-white/10 pb-4">
+          <div className="flex items-center justify-between text-[11px] tracking-[0.22em] text-[#6E6A61] uppercase font-semibold border-b border-[rgba(26,25,23,0.16)] pb-4">
             <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-[#7C97FF]" />
-              <span className="text-[#EFEFEE]">SECTION 01 // ARCHITECTURE</span>
+              <span className="w-1.5 h-1.5 bg-[#9B3418]" />
+              <span className="text-[#1A1917]">01 // TRUST</span>
             </div>
-            <div>VERIFIED TRUST ENGINE</div>
+            <div>VERIFIED IDENTITY ARCHITECTURE</div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
             
-            {/* Left: Manifesto & Headline */}
-            <div className="lg:col-span-7 space-y-6">
-              <span className="text-xs font-bold tracking-[0.25em] text-[#7C97FF] uppercase block">
-                [ TRUST LAYER SPECIFICATION ]
-              </span>
-              <h2 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight uppercase leading-[0.95]">
+            <div className="lg:col-span-6 space-y-6">
+              <div className="text-xs font-mono font-bold tracking-[0.25em] text-[#9B3418] uppercase">
+                [ ARCHITECTURAL ACCOUNTABILITY ]
+              </div>
+              <h2 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tight uppercase text-[#1A1917] leading-[0.92]">
                 A MARKETPLACE<br />
                 BUILT AROUND<br />
-                <span className="text-[#7C97FF]">ACCOUNTABILITY.</span>
+                <span className="italic font-serif font-normal text-[#9B3418]">ACCOUNTABILITY.</span>
               </h2>
-
-              <p className="text-sm sm:text-base text-[#6E6F76] leading-relaxed max-w-xl font-normal">
-                Conventional peer-to-peer marketplaces rely on buyer risk: irreversible bank wires, untracked courier parcels, and anonymous throwaway accounts. Nexora inverts this dynamic. Trust is engineered mathematically into the transaction loop.
+              <p className="text-sm sm:text-base text-[#4A4741] leading-relaxed font-normal max-w-lg">
+                Conventional marketplaces rely on trust placed in anonymous strangers. Nexora operates on cryptographic custody: funds never touch a seller until you inspect the item and submit confirmation.
               </p>
-
-              <div className="space-y-4 pt-4 border-t border-white/10">
-                <div className="flex items-start gap-4">
-                  <span className="font-mono text-xs font-bold text-[#7C97FF] shrink-0 pt-0.5">01/KYC</span>
-                  <div>
-                    <h3 className="text-xs font-bold tracking-wider uppercase text-white">Government ID Identity Verification</h3>
-                    <p className="text-xs text-[#6E6F76] mt-0.5 leading-relaxed">
-                      Sellers verify Aadhaar/PAN/Passport with biometric facial cross-validation before their listings become discoverable.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-4">
-                  <span className="font-mono text-xs font-bold text-[#7C97FF] shrink-0 pt-0.5">02/SCORE</span>
-                  <div>
-                    <h3 className="text-xs font-bold tracking-wider uppercase text-white">Dynamic 100-Point Seller Trust Metric</h3>
-                    <p className="text-xs text-[#6E6F76] mt-0.5 leading-relaxed">
-                      Calculated from historical delivery speeds, cancellation rates, verified review ratios, and zero dispute infractions.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-4">
-                  <span className="font-mono text-xs font-bold text-[#7C97FF] shrink-0 pt-0.5">03/AUDIT</span>
-                  <div>
-                    <h3 className="text-xs font-bold tracking-wider uppercase text-white">Immutable Escrow Audit Trails</h3>
-                    <p className="text-xs text-[#6E6F76] mt-0.5 leading-relaxed">
-                      Every transaction step is logged with unique idempotency keys, timestamped state transitions, and real-time ledger verification.
-                    </p>
-                  </div>
-                </div>
-              </div>
             </div>
 
-            {/* Right: Live Merchant Trust Telemetry Card */}
-            <div className="lg:col-span-5 bg-[#17171A] border border-white/10 p-6 sm:p-8 space-y-6">
-              <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 border border-white/20 bg-black flex items-center justify-center font-mono font-bold text-white text-xs">
-                    TH
+            <div className="lg:col-span-6 space-y-6">
+              <div className="border border-[rgba(26,25,23,0.16)] bg-[#DCD7CB] p-6 sm:p-8 space-y-6">
+                <div className="flex items-center justify-between border-b border-[rgba(26,25,23,0.16)] pb-4">
+                  <div className="text-xs font-bold uppercase tracking-wider text-[#1A1917]">
+                    MERCHANT REPUTATION MATRIX
                   </div>
-                  <div>
-                    <div className="text-sm font-bold tracking-wider text-white uppercase flex items-center gap-2">
-                      <span>TechHub Deals</span>
-                      <span className="text-[10px] text-[#7C97FF] font-mono">[VERIFIED]</span>
-                    </div>
-                    <div className="text-[10px] font-mono text-[#6E6F76]">MERCHANT ID // NX-M-00101</div>
-                  </div>
-                </div>
-
-                <div className="text-right">
-                  <span className="text-[10px] font-mono text-[#7C97FF] border border-[#7C97FF]/30 px-2 py-0.5">
-                    PLATINUM TIER
+                  <span className="text-[10px] font-mono text-[#9B3418] border border-[#9B3418]/30 px-2 py-0.5 uppercase">
+                    KYC CERTIFIED
                   </span>
                 </div>
-              </div>
 
-              {/* 3 Core Trust Gauge Panels */}
-              <div className="grid grid-cols-3 gap-3 text-center">
-                <div className="border border-white/10 p-3 bg-black/40">
-                  <div className="text-[9px] font-mono text-[#6E6F76] tracking-wider uppercase">TRUST SCORE</div>
-                  <div className="text-2xl font-mono font-extrabold text-[#7C97FF] mt-1">99<span className="text-xs text-[#6E6F76]">/100</span></div>
-                </div>
-                <div className="border border-white/10 p-3 bg-black/40">
-                  <div className="text-[9px] font-mono text-[#6E6F76] tracking-wider uppercase">SATISFACTION</div>
-                  <div className="text-2xl font-mono font-extrabold text-white mt-1">4.95<span className="text-xs text-[#6E6F76]">★</span></div>
-                </div>
-                <div className="border border-white/10 p-3 bg-black/40">
-                  <div className="text-[9px] font-mono text-[#6E6F76] tracking-wider uppercase">FULFILLED</div>
-                  <div className="text-2xl font-mono font-extrabold text-white mt-1">132</div>
-                </div>
-              </div>
-
-              {/* Security Status Checkpoints */}
-              <div className="space-y-2 text-xs font-mono text-[#6E6F76] border-t border-white/10 pt-4">
-                <div className="flex items-center justify-between">
-                  <span>IDENTITY KYC STATUS</span>
-                  <span className="text-emerald-400 font-bold">● AADHAAR VERIFIED</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>ESCROW DISPUTE RATE</span>
-                  <span className="text-white font-bold">0.00% (ZERO DISPUTES)</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>AVG DISPATCH LATENCY</span>
-                  <span className="text-white font-bold">&lt; 4 HOURS</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>OFF-PLATFORM RISK LEVEL</span>
-                  <span className="text-emerald-400 font-bold">MINIMAL // RISK_SCORE: 0</span>
-                </div>
-              </div>
-
-              <div className="pt-2">
-                <Link
-                  to="/sellers/101"
-                  className="w-full block text-center border border-white/20 hover:border-white text-white py-3 text-xs font-bold tracking-[0.16em] uppercase transition-colors"
-                >
-                  INSPECT MERCHANT PROFILE →
-                </Link>
-              </div>
-            </div>
-
-          </div>
-
-          {/* 4 Performance Metrics Hairline Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 border-t border-white/10 divide-x divide-y md:divide-y-0 divide-white/10 pt-8">
-            <div className="p-4 sm:p-6 space-y-1">
-              <div className="text-3xl sm:text-4xl font-mono font-extrabold text-white">99.8%</div>
-              <div className="text-[10px] font-mono text-[#6E6F76] uppercase tracking-wider">ORDER ACCEPTANCE RATIO</div>
-            </div>
-            <div className="p-4 sm:p-6 space-y-1">
-              <div className="text-3xl sm:text-4xl font-mono font-extrabold text-[#7C97FF]">₹0.00</div>
-              <div className="text-[10px] font-mono text-[#6E6F76] uppercase tracking-wider">COUNTERPARTY FRAUD LOSS</div>
-            </div>
-            <div className="p-4 sm:p-6 space-y-1">
-              <div className="text-3xl sm:text-4xl font-mono font-extrabold text-white">100%</div>
-              <div className="text-[10px] font-mono text-[#6E6F76] uppercase tracking-wider">ESCROW VAULT SECURED</div>
-            </div>
-            <div className="p-4 sm:p-6 space-y-1">
-              <div className="text-3xl sm:text-4xl font-mono font-extrabold text-white">&lt; 15m</div>
-              <div className="text-[10px] font-mono text-[#6E6F76] uppercase tracking-wider">AVERAGE INQUIRY RESPONSE</div>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      {/* ── SECTION 02: PROTECTED TRANSACTIONS / ESCROW LIFECYCLE ──────────────── */}
-      <section className="bg-[#EFEFEE] border-b border-[#0D0D0F]/12 py-16 sm:py-24 px-4 sm:px-8">
-        <div className="max-w-7xl mx-auto space-y-12">
-          
-          {/* Section Header */}
-          <div className="flex items-center justify-between text-[11px] tracking-[0.22em] text-[#6E6F76] uppercase font-semibold border-b border-[#0D0D0F]/12 pb-4">
-            <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-[#2F5BFF]" />
-              <span className="text-[#0D0D0F]">SECTION 02 // PROTOCOL</span>
-            </div>
-            <div>ESCROW LIFECYCLE SPECIFICATION</div>
-          </div>
-
-          <div className="space-y-4 max-w-3xl">
-            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight uppercase text-[#0D0D0F] leading-tight">
-              THE ZERO-RISK ESCROW LIFECYCLE.
-            </h2>
-            <p className="text-sm sm:text-base text-[#43444A] leading-relaxed">
-              Funds never transfer directly from buyer to merchant. Nexora acts as a cryptographic custodian. Explore each stage of the automated transaction protocol below:
-            </p>
-          </div>
-
-          {/* Interactive Stage Selector Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 border border-[#0D0D0F]/12 divide-x divide-y sm:divide-y-0 divide-[#0D0D0F]/12 bg-[#E4E4E2]">
-            {PROTOCOL_STAGES.map((stg, idx) => {
-              const isSelected = idx === activeProtocolStage
-              return (
-                <button
-                  key={stg.code}
-                  type="button"
-                  onClick={() => {
-                    setActiveProtocolStage(idx)
-                    setIsAutoProgressing(false)
-                  }}
-                  className={`p-4 text-left transition-colors relative ${
-                    isSelected
-                      ? 'bg-[#0D0D0F] text-[#EFEFEE]'
-                      : 'hover:bg-[#EFEFEE] text-[#43444A]'
-                  }`}
-                >
-                  <div className="flex items-center justify-between text-[10px] font-mono mb-2">
-                    <span className={isSelected ? 'text-[#7C97FF]' : 'text-[#6E6F76]'}>
-                      STAGE {stg.step}
-                    </span>
-                    {isSelected && <span className="w-1.5 h-1.5 bg-[#2F5BFF]" />}
+                <div className="space-y-4 text-xs font-mono text-[#4A4741]">
+                  <div className="flex items-start justify-between">
+                    <span className="text-[#6E6A61]">IDENTITY PROTOCOL:</span>
+                    <span className="font-bold text-[#1A1917] text-right">GOVERNMENT ID & BIOMETRIC SELFIE</span>
                   </div>
-                  <div className="text-xs font-bold uppercase tracking-wider line-clamp-1">
-                    {stg.title}
+                  <div className="flex items-start justify-between">
+                    <span className="text-[#6E6A61]">REPUTATION INDEX:</span>
+                    <span className="font-bold text-[#9B3418] text-right">100-POINT ALGORITHM</span>
                   </div>
-                </button>
-              )
-            })}
-          </div>
-
-          {/* Detailed Stage Architecture Console */}
-          <div className="border border-[#0D0D0F]/12 bg-[#E4E4E2] p-6 sm:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            
-            <div className="lg:col-span-8 space-y-6">
-              <div className="flex items-center gap-3">
-                <span className="text-[10px] font-mono text-[#2F5BFF] bg-[#2F5BFF]/10 px-2 py-0.5 border border-[#2F5BFF]/20 font-bold uppercase">
-                  {currentStage.badge}
-                </span>
-                <span className="text-xs font-mono text-[#6E6F76]">
-                  SEQUENCE // 0{activeProtocolStage + 1} OF 05
-                </span>
-              </div>
-
-              <h3 className="text-2xl sm:text-3xl font-extrabold uppercase text-[#0D0D0F]">
-                {currentStage.heading}
-              </h3>
-
-              <div className="space-y-3 text-sm text-[#43444A] leading-relaxed max-w-2xl">
-                <p className="font-medium text-[#0D0D0F]">
-                  {currentStage.summary}
-                </p>
-                <p className="text-xs text-[#6E6F76] font-mono leading-normal">
-                  {currentStage.detail}
-                </p>
-              </div>
-
-              <div className="pt-2 flex flex-wrap items-center gap-6 text-xs font-mono text-[#43444A] border-t border-[#0D0D0F]/12">
-                <div>
-                  <span className="text-[#6E6F76] block text-[10px]">VALUATION RULE</span>
-                  <span className="font-bold text-[#0D0D0F]">100 CREDITS = ₹100 INR</span>
-                </div>
-                <div>
-                  <span className="text-[#6E6F76] block text-[10px]">REVERSIBILITY</span>
-                  <span className="font-bold text-[#0D0D0F]">100% REFUND ON MISREPRESENTATION</span>
-                </div>
-                <div>
-                  <span className="text-[#6E6F76] block text-[10px]">ESCROW TYPE</span>
-                  <span className="font-bold text-[#2F5BFF]">MUTUAL-CONFIRMATION VAULT</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Stage Visual Terminal */}
-            <div className="lg:col-span-4 bg-[#0D0D0F] text-[#EFEFEE] p-6 border border-[#0D0D0F] space-y-4 font-mono text-xs">
-              <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                <span className="text-[#7C97FF] font-bold">TERMINAL // ESCROW_STATUS</span>
-                <span className="text-[10px] text-emerald-400">● RUNNING</span>
-              </div>
-
-              <div className="space-y-2 text-[11px] text-[#6E6F76]">
-                <div className="flex justify-between">
-                  <span>ORDER_REF</span>
-                  <span className="text-white">NX-ORD-20481</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>VAULT_ALLOCATION</span>
-                  <span className="text-white">145,000 MC (₹145,000)</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>MERCHANT_PAYOUT</span>
-                  <span className="text-amber-400">PENDING CONFIRMATION</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>DOORSTEP_WINDOW</span>
-                  <span className="text-white">48 HOURS ACTIVE</span>
+                  <div className="flex items-start justify-between">
+                    <span className="text-[#6E6A61]">DEFAULT PROTECTION:</span>
+                    <span className="font-bold text-[#1A1917] text-right">100% CUSTODY VAULT REFUND</span>
+                  </div>
+                  <div className="flex items-start justify-between">
+                    <span className="text-[#6E6A61]">SETTLEMENT RULE:</span>
+                    <span className="font-bold text-[#1A1917] text-right">FIXED 100 CREDITS = ₹100 INR</span>
+                  </div>
                 </div>
               </div>
 
-              <div className="p-3 bg-white/5 border border-white/10 text-[10px] text-white/80 leading-relaxed">
-                "Payment remains in cold storage until recipient physically unboxes, verifies specifications, and submits cryptographically authenticated signature."
+              {/* Factual Performance Telemetry */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 border border-[rgba(26,25,23,0.16)] divide-x divide-y sm:divide-y-0 divide-[rgba(26,25,23,0.16)] bg-[#DCD7CB] text-center p-2">
+                <div className="p-3 space-y-1">
+                  <div className="text-xl sm:text-2xl font-mono font-extrabold text-[#1A1917]">99.8%</div>
+                  <div className="text-[9px] font-mono text-[#6E6A61] uppercase">FULFILLMENT</div>
+                </div>
+                <div className="p-3 space-y-1">
+                  <div className="text-xl sm:text-2xl font-mono font-extrabold text-[#9B3418]">₹0.00</div>
+                  <div className="text-[9px] font-mono text-[#6E6A61] uppercase">BUYER DEFAULT</div>
+                </div>
+                <div className="p-3 space-y-1">
+                  <div className="text-xl sm:text-2xl font-mono font-extrabold text-[#1A1917]">100%</div>
+                  <div className="text-[9px] font-mono text-[#6E6A61] uppercase">ESCROW VAULT</div>
+                </div>
+                <div className="p-3 space-y-1">
+                  <div className="text-xl sm:text-2xl font-mono font-extrabold text-[#1A1917]">1:1</div>
+                  <div className="text-[9px] font-mono text-[#6E6A61] uppercase">INR VALUATION</div>
+                </div>
               </div>
             </div>
 
@@ -792,387 +633,511 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── SECTION 03: MULTI-OFFER COMPARISON ENGINE ──────────────────────────── */}
-      <section className="bg-[#E4E4E2] border-b border-[#0D0D0F]/12 py-16 sm:py-24 px-4 sm:px-8">
+      {/* ── SECTION 02 — PROTECTED TRANSACTIONS (ESCROW LIFECYCLE) ─────────────── */}
+      <section id="how-it-works" className="py-20 sm:py-28 px-4 sm:px-8 border-b border-[rgba(26,25,23,0.16)] bg-[#DCD7CB]">
         <div className="max-w-7xl mx-auto space-y-12">
           
-          <div className="flex items-center justify-between text-[11px] tracking-[0.22em] text-[#6E6F76] uppercase font-semibold border-b border-[#0D0D0F]/12 pb-4">
+          <div className="flex items-center justify-between text-[11px] tracking-[0.22em] text-[#6E6A61] uppercase font-semibold border-b border-[rgba(26,25,23,0.16)] pb-4">
             <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-[#2F5BFF]" />
-              <span className="text-[#0D0D0F]">SECTION 03 // INTELLIGENCE</span>
+              <span className="w-1.5 h-1.5 bg-[#9B3418]" />
+              <span className="text-[#1A1917]">02 // PROTECTED TRANSACTIONS</span>
             </div>
-            <div>LIVE OFFER AGGREGATION</div>
+            <div>ESCROW PROTOCOL LIFECYCLE</div>
           </div>
 
           <div className="max-w-3xl space-y-3">
-            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight uppercase text-[#0D0D0F] leading-tight">
-              ONE PRODUCT. MULTIPLE OFFERS.<br />
-              <span className="text-[#43444A]">ONE SMARTER DECISION.</span>
+            <h2 className="text-3xl sm:text-5xl font-black tracking-tight uppercase text-[#1A1917] leading-tight">
+              FROM PAYMENT AUTHORIZATION<br />
+              TO DOORSTEP ACCEPTANCE.
             </h2>
-            <p className="text-sm sm:text-base text-[#43444A] leading-relaxed">
-              Stop toggling dozens of disparate tabs. Nexora aggregates competing offers from multiple verified sellers side-by-side with verified trust scores.
+            <p className="text-sm sm:text-base text-[#4A4741] leading-relaxed">
+              Funds never transfer directly from buyer to merchant. Nexora acts as a cryptographic custodian until physical goods are inspected and verified.
             </p>
           </div>
 
-          {/* Product Toggle Buttons */}
-          <div className="flex flex-wrap items-center gap-2">
-            {COMPARISON_DATASETS.map((item, idx) => {
-              const active = idx === activeCompIdx
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setActiveCompIdx(idx)}
-                  className={`px-5 py-3 text-xs font-bold uppercase tracking-wider transition-all border ${
-                    active
-                      ? 'bg-[#0D0D0F] text-[#EFEFEE] border-[#0D0D0F]'
-                      : 'bg-[#EFEFEE] text-[#43444A] border-[#0D0D0F]/12 hover:border-[#0D0D0F]'
-                  }`}
-                >
-                  <span className="text-[10px] font-mono text-[#2F5BFF] mr-2">[{item.specCode}]</span>
-                  <span>{item.title}</span>
-                </button>
-              )
-            })}
-          </div>
-
-          {/* Active Comparison Matrix */}
-          <div className="border border-[#0D0D0F]/12 bg-[#EFEFEE] p-6 sm:p-8 space-y-8">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-[#0D0D0F]/12 pb-6">
-              <div className="flex items-center gap-4">
-                <img
-                  src={currentComp.image}
-                  alt={currentComp.title}
-                  className="w-16 h-16 sm:w-20 sm:h-20 object-cover border border-[#0D0D0F]/12"
-                />
-                <div>
-                  <div className="text-[10px] font-mono text-[#2F5BFF] uppercase tracking-wider">
-                    SPECIFICATION ARCHIVE // {currentComp.specCode}
-                  </div>
-                  <h3 className="text-xl sm:text-2xl font-bold uppercase text-[#0D0D0F]">
-                    {currentComp.title}
-                  </h3>
-                  <div className="text-xs text-[#6E6F76] font-mono mt-0.5">
-                    {currentComp.subtitle}
-                  </div>
+          {/* Linear Sequence Hairline Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-5 border border-[rgba(26,25,23,0.16)] divide-y md:divide-y-0 md:divide-x divide-[rgba(26,25,23,0.16)] bg-[#E7E3DA]">
+            {[
+              { step: '01', title: 'PAYMENT', desc: 'Buyer authorizes purchase with credits (100 Credits = ₹100 INR).' },
+              { step: '02', title: 'SECURED', desc: '100% of order credits locked into cold escrow custody ledger.' },
+              { step: '03', title: 'DELIVERY', desc: 'Merchant ships via verified courier or coordinates SafePoint exchange.' },
+              { step: '04', title: 'CONFIRM', desc: 'Buyer conducts 48h doorstep inspection of specs and condition.' },
+              { step: '05', title: 'RELEASE', desc: 'Buyer taps Confirm. Escrow vault disburses payout to merchant.' },
+            ].map((st) => (
+              <div key={st.step} className="p-6 space-y-3 hover:bg-[#DCD7CB]/40 transition-colors">
+                <div className="text-[10px] font-mono text-[#9B3418] font-bold">
+                  STAGE // {st.step}
                 </div>
+                <div className="text-base font-bold uppercase tracking-wider text-[#1A1917]">
+                  {st.title}
+                </div>
+                <p className="text-xs text-[#4A4741] leading-relaxed font-normal">
+                  {st.desc}
+                </p>
               </div>
-
-              <div className="flex items-center gap-4 text-xs font-mono">
-                <div className="text-right">
-                  <span className="text-[10px] text-[#6E6F76] block">COMPETING OFFERS</span>
-                  <span className="font-bold text-[#0D0D0F]">{currentComp.offers.length} VERIFIED QUOTES</span>
-                </div>
-                <Link
-                  to={currentComp.link}
-                  className="bg-[#0D0D0F] text-[#EFEFEE] px-4 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-[#43444A] transition-colors"
-                >
-                  VIEW FULL LISTING →
-                </Link>
-              </div>
-            </div>
-
-            {/* Offer Comparison Columns */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {currentComp.offers.map((offer, oIdx) => (
-                <div
-                  key={offer.merchant}
-                  className={`p-6 border transition-all flex flex-col justify-between space-y-6 ${
-                    oIdx === 0
-                      ? 'border-[#0D0D0F] bg-[#E4E4E2]'
-                      : 'border-[#0D0D0F]/12 bg-[#EFEFEE]'
-                  }`}
-                >
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold uppercase tracking-wider text-[#0D0D0F]">
-                        {offer.merchant}
-                      </span>
-                      {oIdx === 0 ? (
-                        <span className="text-[10px] font-mono font-bold text-[#2F5BFF] border border-[#2F5BFF]/30 px-2 py-0.5">
-                          BEST OFFER
-                        </span>
-                      ) : (
-                        <span className="text-[10px] font-mono text-[#6E6F76]">
-                          VERIFIED QUOTE
-                        </span>
-                      )}
-                    </div>
-
-                    <div>
-                      <div className="text-[10px] font-mono text-[#6E6F76] uppercase">PRICE / VALUATION</div>
-                      <div className="text-2xl sm:text-3xl font-mono font-extrabold text-[#0D0D0F] mt-0.5">
-                        ₹{offer.price.toLocaleString('en-IN')}
-                      </div>
-                      <div className="text-[11px] font-mono text-[#6E6F76] mt-0.5">
-                        ({offer.price.toLocaleString('en-IN')} Credits • 100 CR = ₹100)
-                      </div>
-                    </div>
-
-                    <div className="space-y-2 text-xs font-mono text-[#43444A] border-t border-[#0D0D0F]/10 pt-3">
-                      <div className="flex justify-between">
-                        <span className="text-[#6E6F76]">CONDITION:</span>
-                        <span className="font-bold text-[#0D0D0F]">{offer.condition}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-[#6E6F76]">MERCHANT LEVEL:</span>
-                        <span className="font-bold text-[#0D0D0F]">{offer.level}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-[#6E6F76]">TRUST SCORE:</span>
-                        <span className="font-bold text-[#2F5BFF]">{offer.trustScore} / 100</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-[#6E6F76]">FULFILLMENT:</span>
-                        <span className="font-bold text-[#0D0D0F] truncate max-w-[140px]">{offer.fulfillment}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Link
-                      to={currentComp.link}
-                      className={`w-full block text-center py-3 text-xs font-bold uppercase tracking-wider transition-colors border ${
-                        oIdx === 0
-                          ? 'bg-[#0D0D0F] text-[#EFEFEE] hover:bg-[#43444A] border-[#0D0D0F]'
-                          : 'border-[#0D0D0F] text-[#0D0D0F] hover:bg-[#0D0D0F] hover:text-[#EFEFEE]'
-                      }`}
-                    >
-                      SELECT THIS OFFER →
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-
+            ))}
           </div>
 
         </div>
       </section>
 
-      {/* ── SECTION 04: CURATED MARKETPLACE CATALOG ────────────────────────────── */}
-      <section className="bg-[#EFEFEE] border-b border-[#0D0D0F]/12 py-16 sm:py-24 px-4 sm:px-8">
-        <div className="max-w-7xl mx-auto space-y-12">
+      {/* ── SECTION 03 — COMPUTED TRANSACTION STUDY (PINNED STAGE) ─────────────── */}
+      <section ref={studyRef} className="relative h-[220vh] bg-[#DCD7CB] border-b border-[rgba(26,25,23,0.16)]">
+        <div className="sticky top-0 h-screen w-full overflow-hidden flex flex-col justify-between p-4 sm:p-8 md:p-12">
           
-          <div className="flex items-center justify-between text-[11px] tracking-[0.22em] text-[#6E6F76] uppercase font-semibold border-b border-[#0D0D0F]/12 pb-4">
-            <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-[#2F5BFF]" />
-              <span className="text-[#0D0D0F]">SECTION 04 // DISCOVERY</span>
-            </div>
-            <div>VERIFIED CATALOG</div>
+          {/* Study Header */}
+          <div className="max-w-7xl mx-auto w-full flex items-center justify-between text-[11px] font-mono tracking-[0.22em] text-[#6E6A61] uppercase border-b border-[rgba(26,25,23,0.16)] pb-3">
+            <span className="text-[#1A1917] font-bold">03 // COMPUTED TRANSACTION STUDY</span>
+            <span className="text-[#9B3418]">
+              PROGRESS // {Math.round(studyProgress * 100)}%
+            </span>
+            <span>MODEL // NX-ESCROW-20481</span>
           </div>
 
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div className="space-y-2 max-w-2xl">
-              <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight uppercase text-[#0D0D0F] leading-tight">
-                ACTIVE MARKETPLACE LISTINGS.
-              </h2>
-              <p className="text-sm text-[#43444A]">
-                Every item is authenticated by a verified merchant, backed by cold escrow protection, and supported by multi-offer comparison.
+          {/* Centerpiece Architecture: Calibration Stage */}
+          <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-center flex-1 my-auto">
+            
+            {/* Left Study Readout */}
+            <div className="lg:col-span-5 space-y-6">
+              <div className="inline-block px-2.5 py-1 text-[10px] font-mono text-[#9B3418] border border-[#9B3418]/30 font-bold uppercase">
+                {currentStudyStage.badge}
+              </div>
+
+              <div className="space-y-1">
+                <div className="text-[10px] font-mono text-[#6E6A61] uppercase tracking-wider">
+                  VERIFIED STAGE 0{studyStage + 1} OF 04
+                </div>
+                <h3 className="text-2xl sm:text-4xl font-black uppercase text-[#1A1917] leading-tight">
+                  {currentStudyStage.title}
+                </h3>
+              </div>
+
+              <p className="text-sm text-[#4A4741] leading-relaxed max-w-md font-normal">
+                {currentStudyStage.description}
               </p>
+
+              {/* Technical Marker Readouts */}
+              <div className="border border-[rgba(26,25,23,0.16)] bg-[#E7E3DA] p-4 space-y-2 text-xs font-mono">
+                <div className="flex justify-between">
+                  <span className="text-[#6E6A61]">HASH POINTER:</span>
+                  <span className="font-bold text-[#1A1917]">{currentStudyStage.hash}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#6E6A61]">TELEMETRY:</span>
+                  <span className="font-bold text-[#9B3418]">{currentStudyStage.telemetry}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#6E6A61]">CONVERSION:</span>
+                  <span className="font-bold text-[#1A1917]">100 CREDITS = ₹100 INR</span>
+                </div>
+              </div>
             </div>
 
-            <Link
-              to="/search"
-              className="group text-xs font-bold uppercase tracking-[0.18em] text-[#0D0D0F] hover:text-[#2F5BFF] transition-colors flex items-center gap-1.5 self-start md:self-auto border-b border-[#0D0D0F] pb-1"
-            >
-              <span>EXPLORE ALL {CURATED_PRODUCTS.length}+ LISTINGS</span>
-              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-            </Link>
+            {/* Right: Technical Subject with Construction Crosshairs */}
+            <div className="lg:col-span-7 relative flex items-center justify-center p-6 border border-[rgba(26,25,23,0.16)] bg-[#E7E3DA] min-h-[340px] sm:min-h-[420px]">
+              
+              {/* Construction Lines & Crosshairs */}
+              <div className="absolute top-3 left-3 text-[9px] font-mono text-[#6E6A61]">+ [X: 01.29 Y: 44.10]</div>
+              <div className="absolute top-3 right-3 text-[9px] font-mono text-[#6E6A61]">+ [INSPECTION_WINDOW]</div>
+              <div className="absolute bottom-3 left-3 text-[9px] font-mono text-[#6E6A61]">+ [CALIBRATED_GRID]</div>
+              <div className="absolute bottom-3 right-3 text-[9px] font-mono text-[#6E6A61]">+ [NX_CUSTODY]</div>
+
+              {/* Centered Exhibit Photograph */}
+              <div className="relative">
+                <img
+                  src="https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&auto=format&fit=crop&q=80"
+                  alt="Transaction Study Object"
+                  className="max-h-[260px] sm:max-h-[320px] w-auto object-contain mix-blend-multiply drop-shadow-xl"
+                />
+                <div className="absolute -bottom-4 right-0 bg-[#1A1917] text-[#E7E3DA] text-[9px] font-mono px-2 py-0.5 uppercase tracking-wider">
+                  CUSTODY // 145,000 MC RESERVED
+                </div>
+              </div>
+
+            </div>
+
           </div>
 
-          {/* Category Filter Chips */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide text-xs font-bold uppercase tracking-wider">
-            {['ALL', 'Electronics', 'Vehicles', 'Musical Instruments', 'Furniture', 'Fashion'].map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => setActiveCategoryFilter(cat)}
-                className={`px-4 py-2 border transition-colors whitespace-nowrap ${
-                  activeCategoryFilter === cat
-                    ? 'bg-[#0D0D0F] text-[#EFEFEE] border-[#0D0D0F]'
-                    : 'bg-[#E4E4E2] text-[#43444A] border-[#0D0D0F]/12 hover:border-[#0D0D0F]'
+          {/* Stage Step Indicator */}
+          <div className="max-w-7xl mx-auto w-full pt-4 border-t border-[rgba(26,25,23,0.16)] grid grid-cols-4 text-[10px] font-mono uppercase tracking-wider">
+            {TRANSACTION_STUDY_STAGES.map((s, idx) => (
+              <div
+                key={s.code}
+                onClick={() => setStudyStage(idx)}
+                className={`cursor-pointer transition-colors ${
+                  idx === studyStage ? 'text-[#9B3418] font-bold' : 'text-[#6E6A61] hover:text-[#1A1917]'
                 }`}
               >
-                {cat}
-              </button>
+                0{idx + 1} // {s.title}
+              </div>
             ))}
           </div>
 
-          {/* Product Grid: Sharp Architectural Cards (rounded-none, hairlines) */}
-          {loading ? (
-            <div className="py-20 flex justify-center">
-              <LoadingSpinner size="lg" />
+        </div>
+      </section>
+
+      {/* ── SECTION 04 — DISCOVERY (MULTI-OFFER & CATALOG) ─────────────────────── */}
+      <section id="marketplace" className="py-20 sm:py-28 px-4 sm:px-8 border-b border-[rgba(26,25,23,0.16)] bg-[#E7E3DA]">
+        <div className="max-w-7xl mx-auto space-y-14">
+          
+          <div className="flex items-center justify-between text-[11px] tracking-[0.22em] text-[#6E6F76] uppercase font-semibold border-b border-[rgba(26,25,23,0.16)] pb-4">
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-[#9B3418]" />
+              <span className="text-[#1A1917]">04 // DISCOVERY</span>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {filteredProducts.map((prod) => (
-                <div
-                  key={prod.id}
-                  className="group bg-[#E4E4E2] border border-[#0D0D0F]/12 flex flex-col justify-between transition-all duration-300 hover:border-[#0D0D0F]"
-                >
-                  <div>
-                    {/* Architectural Product Photography Viewport */}
-                    <div className="relative aspect-square overflow-hidden bg-[#EFEFEE] border-b border-[#0D0D0F]/12">
-                      <img
-                        src={getProductImage(prod)}
-                        alt={prod.title}
-                        className="w-full h-full object-cover grayscale-20 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
-                        onError={(e) => {
-                          e.target.onerror = null
-                          e.target.src = getProductImage(prod)
-                        }}
-                      />
+            <div>MULTI-OFFER INTELLIGENCE</div>
+          </div>
 
-                      {/* Technical Corner Crop Marks */}
-                      <div className="absolute top-2 left-2 text-[8px] font-mono text-[#0D0D0F]/60 select-none">+</div>
-                      <div className="absolute top-2 right-2 text-[8px] font-mono text-[#0D0D0F]/60 select-none">+</div>
+          {/* Multi-Offer Comparison Engine */}
+          <div className="space-y-6">
+            <div className="max-w-3xl space-y-2">
+              <h2 className="text-3xl sm:text-5xl font-black tracking-tight uppercase text-[#1A1917] leading-tight">
+                ONE PRODUCT. MULTIPLE OFFERS.<br />
+                <span className="italic font-serif font-normal text-[#9B3418]">ONE SMARTER DECISION.</span>
+              </h2>
+              <p className="text-sm text-[#4A4741]">
+                Compare verified quotes from multiple merchants side-by-side on a single catalog viewport:
+              </p>
+            </div>
 
-                      {/* Wishlist Button */}
-                      <button
-                        onClick={(e) => toggleWishlist(prod.id, e)}
-                        className="absolute top-3 right-3 p-2 bg-[#EFEFEE]/90 hover:bg-[#0D0D0F] hover:text-[#EFEFEE] text-[#0D0D0F] border border-[#0D0D0F]/12 transition-colors z-10"
-                        aria-label="Save listing"
-                      >
-                        <Heart
-                          className={`w-3.5 h-3.5 ${
-                            wishlistIds.has(prod.id) ? 'fill-[#2F5BFF] text-[#2F5BFF]' : ''
-                          }`}
-                        />
-                      </button>
+            {/* Product Toggle Buttons */}
+            <div className="flex flex-wrap items-center gap-2">
+              {COMPARISON_DATASETS.map((item, idx) => {
+                const active = idx === activeCompIdx
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setActiveCompIdx(idx)}
+                    className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all border ${
+                      active
+                        ? 'bg-[#1A1917] text-[#E7E3DA] border-[#1A1917]'
+                        : 'bg-[#DCD7CB] text-[#4A4741] border-[rgba(26,25,23,0.16)] hover:border-[#1A1917]'
+                    }`}
+                  >
+                    <span className="text-[10px] font-mono text-[#9B3418] mr-2">[{item.specCode}]</span>
+                    <span>{item.title}</span>
+                  </button>
+                )
+              })}
+            </div>
 
-                      {/* Condition Badge */}
-                      {prod.condition && (
-                        <span className="absolute bottom-3 left-3 bg-[#0D0D0F] text-[#EFEFEE] text-[9px] font-mono tracking-wider px-2 py-0.5 uppercase">
-                          {prod.condition.replace('_', ' ')}
-                        </span>
-                      )}
+            {/* Offer Comparison Columns */}
+            <div className="grid grid-cols-1 md:grid-cols-3 border border-[rgba(26,25,23,0.16)] divide-y md:divide-y-0 md:divide-x divide-[rgba(26,25,23,0.16)] bg-[#DCD7CB]">
+              {currentComp.offers.map((offer, oIdx) => (
+                <div key={offer.merchant} className="p-6 space-y-5 flex flex-col justify-between">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between text-xs font-mono">
+                      <span className="font-bold text-[#1A1917]">{offer.merchant}</span>
+                      <span className="text-[10px] text-[#9B3418] border border-[#9B3418]/30 px-2 py-0.5">
+                        {offer.status}
+                      </span>
                     </div>
 
-                    {/* Metadata & Product Info */}
-                    <div className="p-5 space-y-3">
-                      <div className="flex items-center justify-between text-[10px] font-mono text-[#6E6F76] uppercase">
-                        <span>{prod.category || 'ELECTRONICS'}</span>
-                        {prod.city && (
-                          <span className="flex items-center gap-1 text-[#43444A]">
-                            <MapPin className="w-3 h-3 text-[#2F5BFF]" />
-                            {prod.city}
+                    <div>
+                      <div className="text-[10px] font-mono text-[#6E6A61] uppercase">ESCROW QUOTE</div>
+                      <div className="text-2xl sm:text-3xl font-mono font-extrabold text-[#1A1917]">
+                        ₹{offer.price.toLocaleString('en-IN')}
+                      </div>
+                      <div className="text-[11px] font-mono text-[#6E6A61]">
+                        {offer.price.toLocaleString('en-IN')} Credits • 100 CR = ₹100
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 text-xs font-mono text-[#4A4741] border-t border-[rgba(26,25,23,0.16)] pt-3">
+                      <div className="flex justify-between">
+                        <span className="text-[#6E6A61]">CONDITION:</span>
+                        <span className="font-bold text-[#1A1917]">{offer.condition}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-[#6E6A61]">TRUST SCORE:</span>
+                        <span className="font-bold text-[#9B3418]">{offer.trustScore} / 100</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-[#6E6A61]">DISPATCH:</span>
+                        <span className="font-bold text-[#1A1917] truncate max-w-[140px]">{offer.fulfillment}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Link
+                    to={currentComp.link}
+                    className="w-full block text-center py-3 text-xs font-bold uppercase tracking-wider transition-colors border border-[#1A1917] bg-[#1A1917] text-[#E7E3DA] hover:bg-[#4A4741]"
+                  >
+                    SELECT THIS OFFER →
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Active Marketplace Catalog Grid */}
+          <div className="space-y-8 pt-8 border-t border-[rgba(26,25,23,0.16)]">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+              <div>
+                <h3 className="text-2xl sm:text-3xl font-black uppercase text-[#1A1917]">
+                  VERIFIED MARKETPLACE CATALOG
+                </h3>
+                <p className="text-xs sm:text-sm text-[#4A4741] mt-1">
+                  High-value products authenticated by KYC-verified merchants. Backed by 48h doorstep inspection.
+                </p>
+              </div>
+
+              {/* Domain Filter Chips */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide text-[11px] font-mono uppercase">
+                {['ALL', 'Electronics', 'Vehicles', 'Musical Instruments', 'Furniture', 'Fashion'].map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setActiveCategoryFilter(cat)}
+                    className={`px-3 py-1.5 border transition-colors whitespace-nowrap ${
+                      activeCategoryFilter === cat
+                        ? 'bg-[#1A1917] text-[#E7E3DA] border-[#1A1917]'
+                        : 'bg-[#DCD7CB] text-[#4A4741] border-[rgba(26,25,23,0.16)] hover:border-[#1A1917]'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="py-20 flex justify-center">
+                <LoadingSpinner size="lg" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {filteredProducts.map((prod) => (
+                  <div
+                    key={prod.id}
+                    className="group border border-[rgba(26,25,23,0.16)] bg-[#DCD7CB] flex flex-col justify-between transition-all duration-300 hover:border-[#1A1917]"
+                  >
+                    <div>
+                      {/* Product Image Frame */}
+                      <div className="relative aspect-square overflow-hidden bg-[#E7E3DA] border-b border-[rgba(26,25,23,0.16)]">
+                        <img
+                          src={getProductImage(prod)}
+                          alt={prod.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                          onError={(e) => {
+                            e.target.onerror = null
+                            e.target.src = getProductImage(prod)
+                          }}
+                        />
+
+                        {/* Wishlist Button */}
+                        <button
+                          onClick={(e) => toggleWishlist(prod.id, e)}
+                          className="absolute top-2.5 right-2.5 p-2 bg-[#E7E3DA]/90 hover:bg-[#1A1917] hover:text-[#E7E3DA] text-[#1A1917] border border-[rgba(26,25,23,0.16)] transition-colors z-10"
+                          aria-label="Save listing"
+                        >
+                          <Heart
+                            className={`w-3.5 h-3.5 ${
+                              wishlistIds.has(prod.id) ? 'fill-[#9B3418] text-[#9B3418]' : ''
+                            }`}
+                          />
+                        </button>
+
+                        {/* Condition Tag */}
+                        {prod.condition && (
+                          <span className="absolute bottom-2.5 left-2.5 bg-[#1A1917] text-[#E7E3DA] text-[9px] font-mono tracking-wider px-2 py-0.5 uppercase">
+                            {prod.condition.replace('_', ' ')}
                           </span>
                         )}
                       </div>
 
-                      <h3 className="font-bold text-sm text-[#0D0D0F] line-clamp-2 leading-snug group-hover:text-[#2F5BFF] transition-colors">
-                        {prod.title}
-                      </h3>
-
-                      {/* Merchant Credential Strip */}
-                      {prod.seller && (
-                        <div className="pt-2 border-t border-[#0D0D0F]/10 flex items-center justify-between text-[11px] font-mono text-[#6E6F76]">
-                          <span className="truncate max-w-[130px] text-[#43444A]">
-                            {prod.seller.displayName || prod.seller.name || 'Verified Merchant'}
-                          </span>
-                          <span className="text-[#2F5BFF] font-bold">
-                            {prod.seller.sellerLevel || 'PLATINUM'}
-                          </span>
+                      {/* Content */}
+                      <div className="p-4 space-y-2">
+                        <div className="flex items-center justify-between text-[10px] font-mono text-[#6E6A61] uppercase">
+                          <span>{prod.category || 'ELECTRONICS'}</span>
+                          {prod.city && (
+                            <span className="flex items-center gap-1 text-[#4A4741]">
+                              <MapPin className="w-3 h-3 text-[#9B3418]" />
+                              {prod.city}
+                            </span>
+                          )}
                         </div>
-                      )}
+
+                        <h4 className="font-bold text-sm text-[#1A1917] line-clamp-2 group-hover:text-[#9B3418] transition-colors leading-snug">
+                          {prod.title}
+                        </h4>
+
+                        {prod.seller && (
+                          <div className="pt-2 border-t border-[rgba(26,25,23,0.16)] flex items-center justify-between text-[10px] font-mono text-[#6E6A61]">
+                            <span className="truncate max-w-[120px] text-[#4A4741]">
+                              {prod.seller.displayName || prod.seller.name || 'Verified Merchant'}
+                            </span>
+                            <span className="text-[#9B3418] font-bold">
+                              {prod.seller.sellerLevel || 'PLATINUM'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Footer / Dual Price */}
+                    <div className="p-4 pt-0 border-t border-[rgba(26,25,23,0.16)] flex items-end justify-between mt-2">
+                      <div>
+                        <div className="text-[8px] font-mono text-[#6E6A61] uppercase">VALUATION</div>
+                        <div className="text-base font-mono font-extrabold text-[#1A1917]">
+                          ₹{Number(prod.priceInCredits || prod.price || 0).toLocaleString('en-IN')}
+                        </div>
+                        <div className="text-[10px] font-mono text-[#6E6A61]">
+                          {Number(prod.priceInCredits || prod.price || 0).toLocaleString('en-IN')} Credits
+                        </div>
+                      </div>
+
+                      <Link
+                        to={`/products/${prod.id}`}
+                        className="bg-[#1A1917] text-[#E7E3DA] hover:bg-[#4A4741] px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-colors flex items-center gap-1"
+                      >
+                        <span>VIEW</span>
+                        <ArrowUpRight className="w-3.5 h-3.5" />
+                      </Link>
                     </div>
                   </div>
-
-                  {/* Dual Currency Price & Action Footer */}
-                  <div className="p-5 pt-0 border-t border-[#0D0D0F]/10 flex items-end justify-between mt-2">
-                    <div>
-                      <div className="text-[9px] font-mono text-[#6E6F76] uppercase tracking-wider">
-                        ESCROW VALUATION
-                      </div>
-                      <div className="text-lg font-mono font-extrabold text-[#0D0D0F]">
-                        ₹{Number(prod.priceInCredits || prod.price || 0).toLocaleString('en-IN')}
-                      </div>
-                      <div className="text-[10px] font-mono text-[#6E6F76]">
-                        {Number(prod.priceInCredits || prod.price || 0).toLocaleString('en-IN')} Credits
-                      </div>
-                    </div>
-
-                    <Link
-                      to={`/products/${prod.id}`}
-                      className="bg-[#0D0D0F] text-[#EFEFEE] hover:bg-[#43444A] px-3.5 py-2 text-xs font-bold uppercase tracking-wider transition-colors flex items-center gap-1 border border-[#0D0D0F]"
-                    >
-                      <span>VIEW</span>
-                      <ArrowUpRight className="w-3 h-3" />
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
 
         </div>
       </section>
 
-      {/* ── SECTION 05: MARKET PRICE SPREAD INTELLIGENCE ───────────────────────── */}
-      <section className="bg-[#E4E4E2] border-b border-[#0D0D0F]/12 py-16 sm:py-24 px-4 sm:px-8">
-        <div className="max-w-7xl mx-auto space-y-10">
+      {/* ── SECTION 05 — MATERIAL / PRACTICE (CORE PRINCIPLES) ────────────────── */}
+      <section className="py-20 sm:py-28 px-4 sm:px-8 border-b border-[rgba(26,25,23,0.16)] bg-[#DCD7CB]">
+        <div className="max-w-7xl mx-auto space-y-12">
           
-          <div className="flex items-center justify-between text-[11px] tracking-[0.22em] text-[#6E6F76] uppercase font-semibold border-b border-[#0D0D0F]/12 pb-4">
+          <div className="flex items-center justify-between text-[11px] tracking-[0.22em] text-[#6E6A61] uppercase font-semibold border-b border-[rgba(26,25,23,0.16)] pb-4">
             <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-[#2F5BFF]" />
-              <span className="text-[#0D0D0F]">SECTION 05 // SPREAD ANALYSIS</span>
+              <span className="w-1.5 h-1.5 bg-[#9B3418]" />
+              <span className="text-[#1A1917]">05 // PRACTICE</span>
             </div>
-            <div>MARKET PRICE BENCHMARK</div>
+            <div>ARCHITECTURAL PRINCIPLES</div>
           </div>
 
-          <div className="max-w-2xl space-y-2">
-            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight uppercase text-[#0D0D0F]">
-              SEE THE MARKET SPREAD BEFORE YOU COMMIT.
+          <div className="max-w-3xl space-y-2">
+            <h2 className="text-3xl sm:text-4xl font-black uppercase text-[#1A1917]">
+              CORE REPUTATION & CUSTODY STANDARDS.
             </h2>
-            <p className="text-sm text-[#43444A]">
-              Live comparison of lowest merchant quotes versus market average across verified active listings:
+            <p className="text-sm text-[#4A4741]">
+              Hairline-ruled principles governing every peer-to-peer transaction on Nexora:
             </p>
           </div>
 
-          {/* Architectural Hairline Data Table */}
-          <div className="border border-[#0D0D0F]/12 bg-[#EFEFEE] overflow-x-auto">
+          {/* Hairline-Ruled Rows */}
+          <div className="border-t border-[rgba(26,25,23,0.16)] divide-y divide-[rgba(26,25,23,0.16)]">
+            {[
+              {
+                label: 'TRUST ARCHITECTURE',
+                description: '100-point dynamic seller score calculated from dispatch velocity, cancellation ratios, and zero dispute infractions.',
+                classification: 'CORE PROTOCOL',
+              },
+              {
+                label: 'CUSTODIAL ESCROW',
+                description: 'Buyer credits are isolated in cold platform custody. Funds are never exposed to counterparty bank transfer risks.',
+                classification: 'SECURITY LAYER',
+              },
+              {
+                label: 'MULTI-OFFER DISCOVERY',
+                description: 'Consolidated product viewports allow buyers to compare competing merchant quotes, condition grades, and delivery terms.',
+                classification: 'CATALOG ENGINE',
+              },
+              {
+                label: 'DOORSTEP INSPECTION',
+                description: 'Mandatory 48-hour physical inspection window. Payout is released solely upon buyer confirmation.',
+                classification: 'BUYER GUARANTEE',
+              },
+              {
+                label: 'FIXED VALUATION',
+                description: 'Guaranteed 1:1 Rupee standard where 100 Credits = ₹100 INR. Zero conversion fees, zero floating tokens.',
+                classification: 'STANDARD SPEC',
+              },
+            ].map((row) => (
+              <div
+                key={row.label}
+                className="py-5 sm:py-6 grid grid-cols-1 md:grid-cols-12 gap-4 items-baseline hover:bg-[#E7E3DA]/40 transition-colors px-2"
+              >
+                <div className="md:col-span-4 font-bold text-sm uppercase tracking-wider text-[#1A1917]">
+                  {row.label}
+                </div>
+                <div className="md:col-span-6 text-xs sm:text-sm text-[#4A4741] font-normal leading-relaxed">
+                  {row.description}
+                </div>
+                <div className="md:col-span-2 text-right font-mono text-[10px] text-[#9B3418] uppercase tracking-wider">
+                  [{row.classification}]
+                </div>
+              </div>
+            ))}
+          </div>
+
+        </div>
+      </section>
+
+      {/* ── SECTION 06 — MARKETPLACE WORK TABLE ───────────────────────────────── */}
+      <section className="py-20 sm:py-28 px-4 sm:px-8 border-b border-[rgba(26,25,23,0.16)] bg-[#E7E3DA]">
+        <div className="max-w-7xl mx-auto space-y-10">
+          
+          <div className="flex items-center justify-between text-[11px] tracking-[0.22em] text-[#6E6F76] uppercase font-semibold border-b border-[rgba(26,25,23,0.16)] pb-4">
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-[#9B3418]" />
+              <span className="text-[#1A1917]">06 // MARKETPLACE WORK TABLE</span>
+            </div>
+            <div>ACTIVE LISTING INDEX</div>
+          </div>
+
+          <div className="max-w-2xl space-y-2">
+            <h2 className="text-3xl sm:text-4xl font-black uppercase text-[#1A1917]">
+              VERIFIED LISTING TELEMETRY.
+            </h2>
+            <p className="text-sm text-[#4A4741]">
+              Live comparison of lowest merchant quotes across active verified listings:
+            </p>
+          </div>
+
+          {/* Full-Width Architectural Table */}
+          <div className="border border-[rgba(26,25,23,0.16)] bg-[#DCD7CB] overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-[#0D0D0F]/12 text-[10px] font-mono tracking-[0.2em] text-[#6E6F76] uppercase bg-[#E4E4E2]">
+                <tr className="border-b border-[rgba(26,25,23,0.16)] text-[10px] font-mono tracking-[0.2em] text-[#6E6A61] uppercase bg-[#E7E3DA]">
                   <th className="p-4 pl-6">ITEM SPECIFICATION</th>
+                  <th className="p-4">DOMAIN</th>
                   <th className="p-4">CONDITION</th>
-                  <th className="p-4">LOWEST QUOTE</th>
-                  <th className="p-4">MARKET AVG</th>
+                  <th className="p-4">OFFER QUOTE</th>
                   <th className="p-4">MERCHANTS</th>
                   <th className="p-4 pr-6 text-right">ACTION</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#0D0D0F]/10 text-xs font-mono">
+              <tbody className="divide-y divide-[rgba(26,25,23,0.16)] text-xs font-mono">
                 {featuredProducts.slice(0, 8).map((p) => {
                   const lowest = Number(p.priceInCredits || p.price || 100)
-                  const avg = Math.round(lowest * 1.07)
                   return (
-                    <tr key={p.id} className="hover:bg-[#E4E4E2]/60 transition-colors">
-                      <td className="p-4 pl-6 font-sans font-bold text-[#0D0D0F] flex items-center gap-3">
+                    <tr key={p.id} className="hover:bg-[#E7E3DA]/60 transition-colors">
+                      <td className="p-4 pl-6 font-sans font-bold text-[#1A1917] flex items-center gap-3">
                         <img
                           src={getProductImage(p)}
                           alt={p.title}
-                          className="w-10 h-10 object-cover border border-[#0D0D0F]/12 shrink-0"
+                          className="w-10 h-10 object-cover border border-[rgba(26,25,23,0.16)] shrink-0"
                         />
                         <span className="line-clamp-1">{p.title}</span>
                       </td>
-                      <td className="p-4 text-[#43444A] uppercase text-[11px]">
-                        {p.condition || 'LIKE NEW'}
+                      <td className="p-4 text-[#4A4741] uppercase text-[11px]">
+                        {p.categoryName || p.category || 'ELECTRONICS'}
                       </td>
-                      <td className="p-4 font-bold text-[#0D0D0F] text-sm">
+                      <td className="p-4 text-[#4A4741] uppercase text-[11px]">
+                        {p.condition?.replace('_', ' ') || 'LIKE NEW'}
+                      </td>
+                      <td className="p-4 font-bold text-[#1A1917] text-sm">
                         ₹{lowest.toLocaleString('en-IN')}
                       </td>
-                      <td className="p-4 text-[#6E6F76]">
-                        ₹{avg.toLocaleString('en-IN')}
-                      </td>
-                      <td className="p-4 text-[#2F5BFF] font-semibold">
+                      <td className="p-4 text-[#9B3418] font-semibold">
                         3 VERIFIED
                       </td>
                       <td className="p-4 pr-6 text-right font-sans">
                         <Link
                           to={`/products/${p.id}`}
-                          className="text-xs font-bold uppercase tracking-wider text-[#0D0D0F] hover:text-[#2F5BFF] underline"
+                          className="text-xs font-bold uppercase tracking-wider text-[#1A1917] hover:text-[#9B3418] underline"
                         >
                           COMPARE →
                         </Link>
@@ -1187,162 +1152,31 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── SECTION 06: VERIFIED REVIEWS ONLY POST-CONFIRMATION (DARK STAGE) ──── */}
-      <section className="bg-[#0D0D0F] text-[#EFEFEE] border-b border-[#0D0D0F] py-16 sm:py-24 px-4 sm:px-8">
-        <div className="max-w-7xl mx-auto space-y-12">
+      {/* ── SECTION 07 — FOOTER / CLOSE & CROPPED FINAL WORDMARK ───────────────── */}
+      <section className="bg-[#DCD7CB] text-[#1A1917] pt-24 sm:pt-32 border-b border-[rgba(26,25,23,0.16)] relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 space-y-12">
           
-          <div className="flex items-center justify-between text-[11px] tracking-[0.22em] text-[#6E6F76] uppercase font-semibold border-b border-white/10 pb-4">
-            <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-[#7C97FF]" />
-              <span className="text-[#EFEFEE]">SECTION 06 // VERIFICATION</span>
-            </div>
-            <div>POST-DELIVERY CONFIRMATION REVIEWS</div>
-          </div>
-
-          <div className="max-w-3xl space-y-3">
-            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight uppercase leading-tight">
-              REVIEWS ONLY FOLLOW<br />
-              <span className="text-[#7C97FF]">VERIFIED RECEIPT.</span>
-            </h2>
-            <p className="text-sm sm:text-base text-[#6E6F76] leading-relaxed">
-              Zero fake reviews. On Nexora, feedback credentials are only unlocked after physical package receipt and buyer confirmation.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                quote:
-                  'Multi-offer comparison showed me three different quotes for the MacBook Pro M2 Max in Bangalore. Bought with Escrow Credits and verified the battery cycles at doorstep before releasing payment.',
-                author: 'David K.',
-                role: 'VERIFIED BUYER // BANGALORE',
-                tx: 'TX // NX-884102',
-                rating: 5,
-              },
-              {
-                quote:
-                  'As an audio merchant selling high-end synthesizers, Nexora verified KYC status immediately eliminated sketchy chargebacks. Every transaction holds credits safely until delivery confirmation.',
-                author: 'Marcus T.',
-                role: 'PLATINUM MERCHANT // AUDIO LABS',
-                tx: 'TX // NX-772910',
-                rating: 5,
-              },
-              {
-                quote:
-                  'Fixed conversion of 100 Credits = ₹100 INR made bookkeeping seamless. Inspection window gave total peace of mind for an expensive mirrorless camera purchase.',
-                author: 'Elena R.',
-                role: 'VERIFIED BUYER // MUMBAI',
-                tx: 'TX // NX-993812',
-                rating: 5,
-              },
-            ].map((rev, i) => (
-              <div key={i} className="p-6 sm:p-8 bg-[#17171A] border border-white/10 space-y-6 flex flex-col justify-between">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between text-xs font-mono text-[#6E6F76]">
-                    <span>{rev.tx}</span>
-                    <span className="text-amber-400">★★★★★</span>
-                  </div>
-                  <p className="text-sm text-[#EFEFEE] leading-relaxed font-normal">
-                    “{rev.quote}”
-                  </p>
-                </div>
-
-                <div className="border-t border-white/10 pt-4 text-xs font-mono">
-                  <div className="font-bold text-white uppercase">{rev.author}</div>
-                  <div className="text-[10px] text-[#7C97FF]">{rev.role}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-        </div>
-      </section>
-
-      {/* ── SECTION 07: SYSTEM SPECIFICATIONS / ACCORDION FAQ ──────────────────── */}
-      <section className="bg-[#EFEFEE] border-b border-[#0D0D0F]/12 py-16 sm:py-24 px-4 sm:px-8">
-        <div className="max-w-4xl mx-auto space-y-12">
-          
-          <div className="flex items-center justify-between text-[11px] tracking-[0.22em] text-[#6E6F76] uppercase font-semibold border-b border-[#0D0D0F]/12 pb-4">
-            <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-[#2F5BFF]" />
-              <span className="text-[#0D0D0F]">SECTION 07 // SYSTEM SPECS</span>
-            </div>
-            <div>FREQUENTLY ASKED QUESTIONS</div>
-          </div>
-
-          <div className="space-y-2">
-            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight uppercase text-[#0D0D0F]">
-              SYSTEM SPECIFICATIONS & FAQS.
-            </h2>
-            <p className="text-sm text-[#43444A]">
-              Essential architectural details regarding transaction security, valuation, and verification:
-            </p>
-          </div>
-
-          <div className="divide-y divide-[#0D0D0F]/12 border-y border-[#0D0D0F]/12">
-            {[
-              {
-                q: '01 // HOW DOES CRYPTOGRAPHIC ESCROW SAFEGUARD BUYERS?',
-                a: 'When you authorize an order, credits are reserved in an isolated platform escrow ledger. The merchant never receives payment directly. Credits are released solely after you inspect the physical goods at delivery and tap "Confirm Delivery". If goods are defective or counterfeit, funds are refunded in full.',
-              },
-              {
-                q: '02 // WHAT IS THE EXACT CONVERSION VALUATION OF MARKETPLACE CREDITS?',
-                a: 'Marketplace Credits operate at a fixed 1:1 Rupee valuation: 100 Credits = ₹100 INR (1 Credit = ₹1 INR). There are zero exchange markups, zero hidden processing penalties, and zero fluctuating tokens.',
-              },
-              {
-                q: '03 // HOW DOES MULTI-MERCHANT AGGREGATION WORK?',
-                a: 'Rather than browsing separate stores, Nexora groups identical models into single catalog viewports. Verified sellers compete directly on price, condition, delivery timeframe, and warranty terms.',
-              },
-              {
-                q: '04 // HOW ARE MERCHANTS VETTED PRIOR TO LISTING?',
-                a: 'Every seller must complete government identity KYC (Aadhaar, PAN, or Passport), biometric verification, and address proof before their listings are approved. Platform algorithms continuously monitor delivery latency and dispute rates.',
-              },
-              {
-                q: '05 // WHAT HAPPENS IN THE EVENT OF AN ITEM DISPUTE?',
-                a: 'If a received item does not match listing specifications or exhibits unmentioned damage, buyer taps "Raise Dispute" within the 48-hour inspection window. Funds remain locked in escrow while platform compliance mediates evidence or issues an immediate refund.',
-              },
-            ].map((faq, idx) => (
-              <details key={idx} className="group py-5 cursor-pointer">
-                <summary className="text-sm sm:text-base font-bold text-[#0D0D0F] flex items-center justify-between list-none uppercase tracking-wide">
-                  <span>{faq.q}</span>
-                  <span className="font-mono text-base text-[#2F5BFF] transition-transform group-open:rotate-45">
-                    +
-                  </span>
-                </summary>
-                <p className="mt-3 text-xs sm:text-sm text-[#43444A] leading-relaxed max-w-3xl font-normal pt-2">
-                  {faq.a}
-                </p>
-              </details>
-            ))}
-          </div>
-
-        </div>
-      </section>
-
-      {/* ── SECTION 08: FINAL EDITORIAL CALL TO ACTION ─────────────────────────── */}
-      <section className="bg-[#0D0D0F] text-[#EFEFEE] py-24 sm:py-32 px-4 sm:px-8 border-b border-[#0D0D0F] relative overflow-hidden">
-        <div className="max-w-7xl mx-auto space-y-10">
-          
-          <div className="flex items-center justify-between text-[11px] tracking-[0.25em] text-[#6E6F76] uppercase font-mono border-b border-white/10 pb-4">
-            <span className="text-[#7C97FF]">DEPLOYMENT // PRODUCTION</span>
-            <span>PAN-INDIA ESCROW NETWORK</span>
+          <div className="flex items-center justify-between text-[11px] font-mono tracking-[0.25em] text-[#6E6A61] uppercase border-b border-[rgba(26,25,23,0.16)] pb-4">
+            <span className="text-[#9B3418]">NEXORA DEPLOYED // PRODUCTION</span>
+            <span>100 CREDITS = ₹100 INR ESCROW</span>
           </div>
 
           <div className="space-y-6 max-w-4xl">
-            <h2 className="text-4xl sm:text-6xl md:text-8xl font-black uppercase tracking-tighter leading-[0.9]">
-              FIND THE BETTER OFFER.<br />
-              <span className="text-[#7C97FF]">TRANSACT WITH ZERO RISK.</span>
+            <h2 className="text-4xl sm:text-6xl md:text-8xl font-black uppercase tracking-tighter leading-[0.88] text-[#1A1917]">
+              READY TO<br />
+              TRADE WITH<br />
+              <span className="italic font-serif font-normal text-[#9B3418]">MORE TRUST.</span>
             </h2>
 
-            <p className="text-sm sm:text-base text-[#6E6F76] max-w-xl font-normal leading-relaxed">
-              Explore thousands of verified listings across electronics, vehicles, musical instruments, and luxury goods with guaranteed escrow custody.
+            <p className="text-sm sm:text-base text-[#4A4741] max-w-xl font-normal leading-relaxed">
+              Explore thousands of verified listings across electronics, vehicles, musical instruments, and luxury goods with guaranteed cryptographic escrow custody.
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-2">
             <Link
               to="/search"
-              className="group bg-[#EFEFEE] text-[#0D0D0F] hover:bg-white px-8 py-5 text-xs font-bold tracking-[0.2em] uppercase transition-all flex items-center justify-center gap-3 border border-white"
+              className="group bg-[#1A1917] text-[#E7E3DA] hover:bg-[#4A4741] px-8 py-5 text-xs font-bold tracking-[0.2em] uppercase transition-all flex items-center justify-center gap-3 border border-[#1A1917]"
             >
               <span>EXPLORE ALL LISTINGS</span>
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
@@ -1350,16 +1184,23 @@ export default function HomePage() {
 
             <Link
               to="/register"
-              className="border border-white/30 text-white hover:border-white px-8 py-5 text-xs font-bold tracking-[0.2em] uppercase transition-colors text-center"
+              className="border border-[#1A1917] text-[#1A1917] hover:bg-[#1A1917] hover:text-[#E7E3DA] px-8 py-5 text-xs font-bold tracking-[0.2em] uppercase transition-colors text-center"
             >
               BECOME A VERIFIED SELLER →
             </Link>
           </div>
 
           {/* Technical Edge Footnote */}
-          <div className="pt-12 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-[10px] font-mono text-[#6E6F76] uppercase tracking-wider">
+          <div className="pt-10 border-t border-[rgba(26,25,23,0.16)] flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-[10px] font-mono text-[#6E6A61] uppercase tracking-wider">
             <div>NEXORA ARCHITECTURE // BENGALURU • MUMBAI • DELHI • HYDERABAD • CHENNAI</div>
-            <div className="text-[#7C97FF]">ESCROW PROTOCOL GUARANTEE: 100% BUYER REVERSAL PROTECTION</div>
+            <div className="text-[#9B3418]">ESCROW PROTOCOL GUARANTEE: 100% BUYER REVERSAL PROTECTION</div>
+          </div>
+
+          {/* Signature Massive Cropped Nexora Bookend Wordmark */}
+          <div className="overflow-hidden pt-6 select-none pointer-events-none">
+            <div className="text-[clamp(80px,22vw,320px)] font-black text-[#1A1917]/10 tracking-tighter leading-[0.72] translate-y-[22%] uppercase text-center">
+              NEXORA
+            </div>
           </div>
 
         </div>

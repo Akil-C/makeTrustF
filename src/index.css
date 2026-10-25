@@ -44,6 +44,9 @@
 .hairline-tech-dark {
   border-color: rgba(239, 239, 238, 0.12);
 }
+.hairline-warm {
+  border-color: rgba(26, 25, 23, 0.16);
+}
 
 /* Highly visible, professional labels & badges */
 .furniture-text {
