@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="nexoraGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="100%" stop-color="#1E293B" />
+    </linearGradient>
+    <linearGradient id="trustEmerald" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="accentRose" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F43F5E" />
+      <stop offset="100%" stop-color="#E11D48" />
+    </linearGradient>
+  </defs>
+
+  <!-- Base Rounded Shield Container -->
+  <rect x="4" y="4" width="56" height="56" rx="16" fill="url(#nexoraGrad)" stroke="#334155" stroke-width="2" />
+  
+  <!-- Stylized Geometric "N" Mark -->
+  <path d="M20 44V20L34 38V20H44V44L30 26V44H20Z" fill="#FFFFFF" />
+  
+  <!-- Trust Escrow Accent Dot -->
+  <circle cx="44" cy="20" r="4.5" fill="url(#trustEmerald)" stroke="#FFFFFF" stroke-width="1.5" />
+</svg>

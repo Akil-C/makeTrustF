@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { prewarmServer } from './services/api'
 import ProtectedRoute from './components/common/ProtectedRoute'
@@ -54,7 +54,17 @@ const PageLoader = () => (
   </div>
 )
 
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [pathname])
+  return null
+}
+
 export default function App() {
+  const location = useLocation()
+
   useEffect(() => {
     // Proactively prewarm backend cloud instance upon initial site load
     prewarmServer()
@@ -62,60 +72,63 @@ export default function App() {
 
   return (
     <AuthProvider>
+      <ScrollToTop />
       <Suspense fallback={<PageLoader />}>
-        <Routes>
-          {/* ── Public ─────────────────────────────────────────────────────── */}
-          <Route path="/"                  element={<HomePage />} />
-          <Route path="/login"             element={<LoginPage />} />
-          <Route path="/register"          element={<RegisterPage />} />
-          <Route path="/forgot-password"   element={<ForgotPasswordPage />} />
-          <Route path="/products/:id"      element={<ProductDetailPage />} />
-          <Route path="/sellers/:id"       element={<SellerProfilePage />} />
-          <Route path="/search"            element={<SearchPage />} />
-          <Route path="/map-search"        element={<MapSearchPage />} />
+        <div key={location.pathname} className="page-swift min-h-screen flex flex-col">
+          <Routes location={location}>
+            {/* ── Public ─────────────────────────────────────────────────────── */}
+            <Route path="/"                  element={<HomePage />} />
+            <Route path="/login"             element={<LoginPage />} />
+            <Route path="/register"          element={<RegisterPage />} />
+            <Route path="/forgot-password"   element={<ForgotPasswordPage />} />
+            <Route path="/products/:id"      element={<ProductDetailPage />} />
+            <Route path="/sellers/:id"       element={<SellerProfilePage />} />
+            <Route path="/search"            element={<SearchPage />} />
+            <Route path="/map-search"        element={<MapSearchPage />} />
 
-          {/* ── Buyer ──────────────────────────────────────────────────────── */}
-          <Route element={<ProtectedRoute roles={['BUYER', 'SELLER', 'ADMIN']} />}>
-            <Route path="/buyer/dashboard"          element={<BuyerDashboard />} />
-            <Route path="/buyer/orders"             element={<BuyerOrders />} />
-            <Route path="/buyer/wishlist"           element={<BuyerWishlist />} />
-            <Route path="/buyer/chat"               element={<BuyerChat />} />
-            <Route path="/checkout/:productId"      element={<CheckoutPage />} />
-          </Route>
+            {/* ── Buyer ──────────────────────────────────────────────────────── */}
+            <Route element={<ProtectedRoute roles={['BUYER', 'SELLER', 'ADMIN']} />}>
+              <Route path="/buyer/dashboard"          element={<BuyerDashboard />} />
+              <Route path="/buyer/orders"             element={<BuyerOrders />} />
+              <Route path="/buyer/wishlist"           element={<BuyerWishlist />} />
+              <Route path="/buyer/chat"               element={<BuyerChat />} />
+              <Route path="/checkout/:productId"      element={<CheckoutPage />} />
+            </Route>
 
-          {/* ── Seller ─────────────────────────────────────────────────────── */}
-          <Route element={<ProtectedRoute roles={['SELLER', 'ADMIN']} />}>
-            <Route path="/seller/dashboard"             element={<SellerDashboard />} />
-            <Route path="/seller/products"              element={<SellerProducts />} />
-            <Route path="/seller/products/create"       element={<CreateProduct />} />
-            <Route path="/seller/products/:id/edit"     element={<EditProduct />} />
-            <Route path="/seller/orders"                element={<SellerOrders />} />
-            <Route path="/seller/kyc"                   element={<SellerKYC />} />
-            <Route path="/seller/analytics"             element={<SellerAnalytics />} />
-            <Route path="/seller/ai-insights"           element={<SellerAIInsights />} />
-            <Route path="/seller/chat"                  element={<SellerChat />} />
-          </Route>
+            {/* ── Seller ─────────────────────────────────────────────────────── */}
+            <Route element={<ProtectedRoute roles={['SELLER', 'ADMIN']} />}>
+              <Route path="/seller/dashboard"             element={<SellerDashboard />} />
+              <Route path="/seller/products"              element={<SellerProducts />} />
+              <Route path="/seller/products/create"       element={<CreateProduct />} />
+              <Route path="/seller/products/:id/edit"     element={<EditProduct />} />
+              <Route path="/seller/orders"                element={<SellerOrders />} />
+              <Route path="/seller/kyc"                   element={<SellerKYC />} />
+              <Route path="/seller/analytics"             element={<SellerAnalytics />} />
+              <Route path="/seller/ai-insights"           element={<SellerAIInsights />} />
+              <Route path="/seller/chat"                  element={<SellerChat />} />
+            </Route>
 
-          {/* ── Admin ──────────────────────────────────────────────────────── */}
-          <Route element={<ProtectedRoute roles={['ADMIN']} />}>
-            <Route path="/admin/dashboard"   element={<AdminDashboard />} />
-            <Route path="/admin/users"       element={<AdminUsers />} />
-            <Route path="/admin/sellers"     element={<AdminSellers />} />
-            <Route path="/admin/kyc"         element={<AdminKYC />} />
-            <Route path="/admin/products"    element={<AdminProducts />} />
-            <Route path="/admin/orders"      element={<AdminOrders />} />
-            <Route path="/admin/reports"     element={<AdminReports />} />
-            <Route path="/admin/disputes"    element={<AdminDisputes />} />
-            <Route path="/admin/ads"         element={<AdminAds />} />
-            <Route path="/admin/credits"     element={<AdminCredits />} />
-            <Route path="/admin/analytics"   element={<AdminAnalytics />} />
-            <Route path="/admin/audit-logs"  element={<AdminAuditLogs />} />
-            <Route path="/admin/settings"    element={<AdminSettings />} />
-          </Route>
+            {/* ── Admin ──────────────────────────────────────────────────────── */}
+            <Route element={<ProtectedRoute roles={['ADMIN']} />}>
+              <Route path="/admin/dashboard"   element={<AdminDashboard />} />
+              <Route path="/admin/users"       element={<AdminUsers />} />
+              <Route path="/admin/sellers"     element={<AdminSellers />} />
+              <Route path="/admin/kyc"         element={<AdminKYC />} />
+              <Route path="/admin/products"    element={<AdminProducts />} />
+              <Route path="/admin/orders"      element={<AdminOrders />} />
+              <Route path="/admin/reports"     element={<AdminReports />} />
+              <Route path="/admin/disputes"    element={<AdminDisputes />} />
+              <Route path="/admin/ads"         element={<AdminAds />} />
+              <Route path="/admin/credits"     element={<AdminCredits />} />
+              <Route path="/admin/analytics"   element={<AdminAnalytics />} />
+              <Route path="/admin/audit-logs"  element={<AdminAuditLogs />} />
+              <Route path="/admin/settings"    element={<AdminSettings />} />
+            </Route>
 
-          {/* ── Fallback ───────────────────────────────────────────────────── */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+            {/* ── Fallback ───────────────────────────────────────────────────── */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
       </Suspense>
     </AuthProvider>
   )

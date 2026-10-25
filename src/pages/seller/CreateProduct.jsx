@@ -98,14 +98,11 @@ export default function CreateProduct() {
   }
 
   const handleGenerateAiDescription = async () => {
-    if (!title) {
-      toast.error('Please enter a product title first.')
-      return
-    }
+    const activeTitle = title.trim() || 'Verified Marketplace Listing'
     setGeneratingAi(true)
     try {
       const res = await aiService.generateDescription({
-        title,
+        title: activeTitle,
         category: categoryId,
         condition,
         keyPoints: aiPrompt,
@@ -113,15 +110,17 @@ export default function CreateProduct() {
       if (res.data?.description) {
         setDescription(res.data.description)
       } else {
+        const specsText = aiPrompt ? ` Key specifications & notes: ${aiPrompt}.` : ''
         setDescription(
-          `Official ${title} in ${condition.replace('_', ' ')} condition. Inspected and verified for authentic quality. Clean cosmetic condition with zero technical faults. Includes original packaging, documentation, and accessories. Fast local pickup available in ${city} with escrow buyer protection.`
+          `Official ${activeTitle} in ${condition.replace('_', ' ')} condition. Inspected and verified for authentic quality. Clean cosmetic condition with zero technical faults.${specsText} Includes original accessories and documentation. Fast local pickup available in ${city} with Nexora escrow buyer protection.`
         )
       }
       toast.success('AI description generated!')
       setAiModalOpen(false)
     } catch {
+      const specsText = aiPrompt ? ` Key specifications & notes: ${aiPrompt}.` : ''
       setDescription(
-        `Official ${title} in ${condition.replace('_', ' ')} condition. Inspected and verified for authentic quality. Clean cosmetic condition with zero technical faults. Includes original packaging, documentation, and accessories. Fast local pickup available in ${city} with escrow buyer protection.`
+        `Official ${activeTitle} in ${condition.replace('_', ' ')} condition. Inspected and verified for authentic quality. Clean cosmetic condition with zero technical faults.${specsText} Includes original accessories and documentation. Fast local pickup available in ${city} with Nexora escrow buyer protection.`
       )
       toast.success('AI description generated!')
       setAiModalOpen(false)
@@ -140,110 +139,69 @@ export default function CreateProduct() {
     setSubmitting(true)
     try {
       const payload = {
-        title,
-        description,
+        title: title.trim(),
+        description: description.trim(),
         priceInCredits: Number(price),
         categoryId: Number(categoryId),
         condition,
-        brand: brand || 'Generic',
-        city: city || 'Bengaluru',
-        state: stateName || 'Karnataka',
-        latitude: latitude || 12.9716,
-        longitude: longitude || 77.5946,
-        locationType: 'EXACT',
+        brand: brand.trim() || undefined,
+        city: city.trim(),
+        state: stateName.trim(),
+        latitude,
+        longitude,
+        locationType: 'APPROXIMATE',
         quantity: 1,
       }
 
       const res = await productService.createProduct(payload)
-      const productId = res.data?.id
+      const newProduct = res.data
+      toast.success('Listing created successfully!')
 
-      if (productId) {
-        if (imageFiles.length > 0) {
-          try {
-            await productService.uploadImages(productId, imageFiles)
-          } catch {
-            /* optional image upload fallback */
-          }
-        }
+      // If user selected extra image files
+      if (imageFiles.length > 0 && newProduct?.id) {
         try {
-          await productService.publishProduct(productId)
+          await productService.uploadImages(newProduct.id, imageFiles)
         } catch {
-          // published
+          // non-critical, image preview will work
         }
       }
 
-      toast.success('Listing created successfully!')
       navigate('/seller/products')
     } catch (err) {
-      const errorMsg = err.response?.data?.message || err.message || 'Unable to publish listing. Please check form inputs.'
-      toast.error(errorMsg)
+      const msg = err.response?.data?.message || err.message || 'Failed to publish listing.'
+      toast.error(msg)
     } finally {
       setSubmitting(false)
     }
   }
 
   return (
-    <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto w-full space-y-8 font-sans">
-      <DemoDisclaimer />
-
-      {/* Top Header Section */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-8 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="space-y-2">
-          <Link
-            to="/seller/products"
-            className="text-xs font-bold text-slate-500 hover:text-slate-900 flex items-center gap-1.5 transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back to Store Inventory</span>
-          </Link>
-          <h1 className="font-sans font-black text-2xl sm:text-3xl lg:text-4xl tracking-tight text-slate-900">
-            Create Item Listing
-          </h1>
-          <p className="text-sm text-slate-600">
-            Publish a certified product to the Nexora local marketplace with escrow payment protection.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setAiModalOpen(true)}
-          className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-rose-600 text-white font-semibold text-xs sm:text-sm transition-all shadow-xs flex items-center gap-2 self-start md:self-auto"
+    <div className="max-w-4xl mx-auto space-y-6 pb-12 font-sans page-swift">
+      {/* Top Breadcrumb & Disclaimer */}
+      <div className="space-y-4">
+        <Link
+          to="/seller/products"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-900 transition-colors uppercase tracking-wider"
         >
-          <Sparkles className="w-4 h-4 text-rose-400" />
-          <span>Gemini AI Assistant</span>
-        </button>
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back to My Products</span>
+        </Link>
+        <DemoDisclaimer />
       </div>
 
-      {/* Form Container */}
-      <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-8 shadow-xs space-y-6">
-        {/* Images Gallery */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
-          <label className="block text-xs font-bold text-slate-700 uppercase mb-3">
-            Product Images Gallery
-          </label>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {imagePreviews.map((img, idx) => (
-              <div key={idx} className="relative aspect-square rounded-xl bg-slate-50 border border-slate-200 overflow-hidden group">
-                <img src={img} alt="" className="w-full h-full object-cover" />
-                <button
-                  type="button"
-                  onClick={() => removeImage(idx)}
-                  className="absolute top-2 right-2 p-1.5 rounded-lg bg-slate-900/80 text-white hover:bg-rose-600 transition-colors shadow-xs"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
-
-            <label className="aspect-square rounded-xl border-2 border-dashed border-slate-300 hover:border-slate-800 bg-slate-50 hover:bg-slate-100/60 transition-colors flex flex-col items-center justify-center cursor-pointer p-4 text-center">
-              <Upload className="w-6 h-6 text-slate-400 mb-1" />
-              <span className="text-xs font-bold text-slate-600">Upload Image</span>
-              <input type="file" multiple accept="image/*" onChange={handleImageUpload} className="hidden" />
-            </label>
-          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            Create Product Listing
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            Publish your item to the trust-first Nexora marketplace with verified GPS and escrow security.
+          </p>
         </div>
+      </div>
 
-        {/* Title & Price */}
+      <form onSubmit={handleSubmit} className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 space-y-6 shadow-xs">
+        {/* Title & Price Row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="sm:col-span-2">
             <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
@@ -253,7 +211,7 @@ export default function CreateProduct() {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Sony WH-1000XM5 Wireless Headphones Silver"
+              placeholder="e.g. Sony WH-1000XM5 Wireless Headphones (Black)"
               required
               className="w-full p-3 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-800"
             />
@@ -261,7 +219,7 @@ export default function CreateProduct() {
 
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
-              Price (100 Credits = ₹100) *
+              Price (Credits / ₹) *
             </label>
             <input
               type="number"
@@ -402,29 +360,93 @@ export default function CreateProduct() {
           </div>
         </div>
 
-        {/* Description */}
+        {/* Detailed Description */}
         <div>
           <div className="flex justify-between items-center mb-1.5">
             <label className="block text-xs font-bold text-slate-700 uppercase">
               Detailed Description *
             </label>
-            <button
-              type="button"
-              onClick={() => setAiModalOpen(true)}
-              className="text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>AI Auto-Write</span>
-            </button>
+            <div className="flex items-center gap-3">
+              <span className="text-[11px] text-slate-400 font-mono">
+                {description.length} chars
+              </span>
+              <button
+                type="button"
+                onClick={() => setAiModalOpen(true)}
+                className="text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 transition-colors swift-interactive"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>AI Auto-Write</span>
+              </button>
+            </div>
           </div>
           <textarea
-            rows={5}
+            rows={6}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Describe technical specs, cosmetic condition, accessories included, and pickup availability..."
             required
-            className="w-full p-3 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-800"
+            className="w-full p-3.5 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-800 leading-relaxed font-normal shadow-2xs resize-y"
           />
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
+            <span className="text-[11px] font-semibold text-slate-400">Quick inserts:</span>
+            {['Original bill & box included', 'Flawless cosmetic condition', 'Battery health 95%+', 'Local pickup with inspection welcome'].map((tip) => (
+              <button
+                key={tip}
+                type="button"
+                onClick={() => setDescription(prev => prev ? `${prev}\n• ${tip}` : `• ${tip}`)}
+                className="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md font-medium transition-colors"
+              >
+                + {tip}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Photos Upload */}
+        <div>
+          <label className="block text-xs font-bold text-slate-700 uppercase mb-2">
+            Product Photos & Gallery
+          </label>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {imagePreviews.map((url, i) => (
+              <div
+                key={i}
+                className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 group bg-slate-50"
+              >
+                <img src={url} alt="Preview" className="w-full h-full object-cover" />
+                {imagePreviews.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeImage(i)}
+                    className="absolute top-1.5 right-1.5 p-1 bg-slate-900/80 hover:bg-rose-600 text-white rounded-full transition-colors shadow-xs"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {i === 0 && (
+                  <span className="absolute bottom-1.5 left-1.5 bg-slate-900/90 text-white text-[10px] font-bold px-2 py-0.5 rounded">
+                    Primary
+                  </span>
+                )}
+              </div>
+            ))}
+
+            {imagePreviews.length < 8 && (
+              <label className="aspect-square rounded-xl border-2 border-dashed border-slate-300 hover:border-slate-500 bg-slate-50/50 hover:bg-slate-50 flex flex-col items-center justify-center cursor-pointer transition-all">
+                <Upload className="w-5 h-5 text-slate-400 mb-1" />
+                <span className="text-xs font-bold text-slate-600">Add Photo</span>
+                <span className="text-[10px] text-slate-400">JPG, PNG, WebP</span>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </label>
+            )}
+          </div>
         </div>
 
         {/* Action Buttons */}
@@ -438,7 +460,7 @@ export default function CreateProduct() {
           <button
             type="submit"
             disabled={submitting}
-            className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-rose-600 text-white font-bold text-xs sm:text-sm transition-colors shadow-xs"
+            className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-rose-600 text-white font-bold text-xs sm:text-sm transition-colors shadow-xs swift-interactive"
           >
             {submitting ? 'Publishing Listing...' : 'Publish to Marketplace'}
           </button>
@@ -448,26 +470,52 @@ export default function CreateProduct() {
       {/* AI Generate Description Modal */}
       {aiModalOpen && (
         <Modal isOpen={aiModalOpen} onClose={() => setAiModalOpen(false)} title="Gemini AI Description Assistant">
-          <div className="space-y-5 p-2 font-sans">
+          <div className="space-y-4 p-2 font-sans">
             <div className="p-3.5 bg-blue-50 text-blue-900 border border-blue-200 rounded-xl text-xs flex items-center gap-2.5">
               <Bot className="w-5 h-5 text-blue-600 shrink-0" />
-              <span>Provide optional key highlights (e.g. "battery 98%, includes leather case, used 3 months").</span>
+              <span>Provide optional details and notes below. Gemini will formulate a clear, verified listing description.</span>
             </div>
 
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase">
-                Key Product Highlights
+                Listing Title
               </label>
               <input
                 type="text"
-                value={aiPrompt}
-                onChange={(e) => setAiPrompt(e.target.value)}
-                placeholder="e.g. mint condition, original charger, fast local handover"
-                className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-900"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Sony WH-1000XM5 Wireless Headphones"
+                className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-900"
               />
             </div>
 
-            <div className="flex justify-end gap-3 pt-2">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase">
+                Notes & Key Highlights (multiline supported)
+              </label>
+              <textarea
+                rows={4}
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder="Type or paste any specs, features, condition notes, or accessories..."
+                className="w-full p-3 bg-white border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-900 leading-relaxed font-normal resize-y"
+              />
+              <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                <span className="text-[10px] text-slate-400 font-semibold">Quick tags:</span>
+                {['Battery health > 95%', 'Includes bill & original box', 'Zero scratches or dents', 'Under manufacturer warranty'].map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setAiPrompt(prev => prev ? `${prev}, ${tag}` : tag)}
+                    className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-0.5 rounded font-medium transition-colors"
+                  >
+                    + {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setAiModalOpen(false)}
@@ -479,10 +527,10 @@ export default function CreateProduct() {
                 type="button"
                 onClick={handleGenerateAiDescription}
                 disabled={generatingAi}
-                className="px-5 py-2 rounded-xl bg-slate-900 hover:bg-rose-600 text-white font-bold text-xs transition-colors flex items-center gap-1.5 shadow-xs"
+                className="px-5 py-2 rounded-xl bg-slate-900 hover:bg-rose-600 text-white font-bold text-xs transition-colors flex items-center gap-1.5 shadow-xs swift-interactive"
               >
                 <Sparkles className="w-4 h-4 text-rose-400" />
-                <span>{generatingAi ? 'Generating...' : 'Generate with Gemini'}</span>
+                <span>{generatingAi ? 'Generating Description...' : 'Generate with Gemini'}</span>
               </button>
             </div>
           </div>

@@ -47,7 +47,7 @@ export function isBackendWarm() {
 }
 
 /**
- * Proactively pings the backend /health probe to wake up the cloud container
+ * Proactively pings backend endpoints in parallel to wake up the cloud container
  * before the user submits actions (reducing perceived wait from 30s to <10-15s or 0s).
  */
 export async function prewarmServer() {
@@ -62,17 +62,27 @@ export async function prewarmServer() {
 
   prewarmPromise = (async () => {
     try {
-      const res = await axios.get(`${API_URL}/api/health`, {
-        timeout: 25000,
-        headers: { 'Cache-Control': 'no-cache' },
-      }).catch(async () => {
-        return await axios.get(`${API_URL}/health`, {
-          timeout: 25000,
-          headers: { 'Cache-Control': 'no-cache' },
-        })
-      })
+      const probeEndpoints = [
+        `${API_URL}/api/health`,
+        `${API_URL}/health`,
+        `${API_URL}/api/categories`
+      ]
 
-      if (res && (res.status === 200 || res.status === 204)) {
+      const requests = probeEndpoints.map(url =>
+        axios.get(url, {
+          timeout: 15000,
+          headers: { 'Cache-Control': 'no-cache' },
+        }).then(res => {
+          if (res && (res.status === 200 || res.status === 204)) {
+            markBackendWarm()
+            return true
+          }
+          return false
+        }).catch(() => false)
+      )
+
+      const results = await Promise.all(requests)
+      if (results.some(Boolean)) {
         markBackendWarm()
         return true
       }
