@@ -2,10 +2,7 @@ import api from './api'
 
 const walletService = {
   /** Get current user's wallet balance and transaction summary */
-  getBalance: () => api.get('/api/wallet'),
-
-  /** Get current user's complete wallet info (alias) */
-  getMyWallet: () => api.get('/api/wallet'),
+  getBalance: () => api.get('/api/wallet/balance'),
 
   /**
    * Paginated wallet transaction history.
