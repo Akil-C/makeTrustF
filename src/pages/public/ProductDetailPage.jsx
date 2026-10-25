@@ -81,6 +81,7 @@ export default function ProductDetailPage() {
   const [similarProducts, setSimilarProducts] = useState([])
   const [reviews, setReviews] = useState([])
   const [reviewsLoading, setReviewsLoading] = useState(false)
+  const [imageModalOpen, setImageModalOpen] = useState(false)
 
   useEffect(() => {
     async function loadProduct() {
@@ -280,23 +281,32 @@ export default function ProductDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
           {/* Left Column: Photo Gallery */}
           <div className="space-y-4">
-            <div className="relative aspect-square bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs group">
+            <div
+              onClick={() => setImageModalOpen(true)}
+              className="relative aspect-square bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs group cursor-zoom-in"
+            >
               <img
                 src={images[activeImageIdx] || fallbackImage}
                 alt={product.title}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 onError={(e) => {
                   e.target.onerror = null
                   e.target.src = fallbackImage
                 }}
               />
-              <button
-                onClick={handleShare}
-                className="absolute top-4 right-4 p-2.5 rounded-xl bg-white/90 hover:bg-white text-slate-700 hover:text-rose-600 transition-colors shadow-xs"
-                title="Share link"
-              >
-                <Share2 className="w-4 h-4" />
-              </button>
+              <div className="absolute top-4 right-4 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); handleShare(); }}
+                  className="p-2.5 rounded-xl bg-white/90 hover:bg-white text-slate-700 hover:text-rose-600 transition-colors shadow-xs"
+                  title="Share link"
+                >
+                  <Share2 className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="absolute bottom-3 right-3 px-2.5 py-1 bg-black/60 backdrop-blur-md rounded-lg text-white text-[10px] font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
+                Click to expand ({activeImageIdx + 1}/{images.length})
+              </div>
             </div>
 
             {/* Thumbnails */}
@@ -673,6 +683,61 @@ export default function ProductDetailPage() {
           </div>
         )}
       </main>
+
+      {/* Sticky Mobile Buying Drawer */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 py-3 shadow-2xl flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">PRICE (100 CR = ₹100)</div>
+          <div className="flex items-baseline gap-1.5">
+            <span className="font-mono font-black text-lg text-rose-600">
+              ₹{Number(product.priceInCredits || product.price || 0).toLocaleString('en-IN')}
+            </span>
+            <span className="text-[11px] font-mono text-slate-500">
+              ({Number(product.priceInCredits || product.price || 0).toLocaleString('en-IN')} Cr)
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleStartChat}
+            disabled={actionLoading}
+            className="p-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
+            title="Chat with seller"
+          >
+            <MessageSquare className="w-4 h-4" />
+          </button>
+          <Link
+            to={`/checkout/${product.id}`}
+            className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-rose-600 text-white font-bold text-xs shadow-md transition-colors flex items-center gap-1.5"
+          >
+            <ShoppingBag className="w-3.5 h-3.5" />
+            <span>Buy Now</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* Image Fullscreen Modal */}
+      {imageModalOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
+          onClick={() => setImageModalOpen(false)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] w-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={images[activeImageIdx] || fallbackImage}
+              alt={product.title}
+              className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl"
+            />
+            <button
+              onClick={() => setImageModalOpen(false)}
+              className="absolute top-2 right-2 p-2 bg-black/60 hover:bg-black text-white rounded-full transition-colors font-bold text-sm"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>

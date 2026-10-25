@@ -88,6 +88,7 @@ export default function SearchPage() {
   const [maxPrice, setMaxPrice] = useState(maxParam)
   const [sortBy, setSortBy] = useState(sortParam)
   const [viewMode, setViewMode] = useState('grid')
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
 
   const [products, setProducts] = useState([])
   const [totalItems, setTotalItems] = useState(0)
@@ -240,21 +241,36 @@ export default function SearchPage() {
         <DemoDisclaimer />
 
         {/* Discovery Search Header */}
-        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-4">
-          <div>
-            <span className="text-xs font-bold text-rose-600 uppercase tracking-wider block">Marketplace Discovery</span>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight mt-1">
-              Explore & Compare Verified Listings
-            </h1>
-            <p className="text-sm text-slate-600 mt-1 max-w-2xl leading-relaxed">
-              Discover active peer-to-peer offers, inspect seller trust scores, and transact safely with platform escrow buyer protection.
-            </p>
+        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <span className="text-xs font-bold text-rose-600 uppercase tracking-wider block">Marketplace Discovery</span>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight mt-1">
+                Explore & Compare Verified Listings
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-2xl leading-relaxed">
+                Discover active peer-to-peer offers, inspect seller trust scores, and transact safely with platform escrow buyer protection (100 Credits = ₹100).
+              </p>
+            </div>
+
+            {/* Mobile Filter Sheet Trigger Button */}
+            <button
+              type="button"
+              onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
+              className="lg:hidden inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-xs shadow-xs self-start sm:self-auto"
+            >
+              <Filter className="w-4 h-4" />
+              <span>{mobileFiltersOpen ? 'Hide Filters' : 'Filter Listings'}</span>
+              {(category || condition || city || minPrice || maxPrice) && (
+                <span className="w-2 h-2 rounded-full bg-rose-500" />
+              )}
+            </button>
           </div>
 
           {/* Search Box */}
           <form
             onSubmit={(e) => { e.preventDefault(); applyFilters(); }}
-            className="flex flex-col sm:flex-row items-center gap-3 pt-2 max-w-3xl"
+            className="flex flex-col sm:flex-row items-center gap-3 pt-1 max-w-3xl"
           >
             <div className="relative flex-1 w-full">
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -273,13 +289,42 @@ export default function SearchPage() {
               Search
             </button>
           </form>
+
+          {/* Interactive Horizontal Category Pills */}
+          <div className="pt-2 border-t border-slate-100 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            <button
+              type="button"
+              onClick={() => applyFilters({ category: '' })}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
+                !category
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              All Listings
+            </button>
+            {PRODUCT_CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => applyFilters({ category: cat })}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+                  category === cat
+                    ? 'bg-rose-600 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Layout Grid: Sidebar Filters + Results */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
           
-          {/* Desktop Filter Sidebar */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-6">
+          {/* Filter Sidebar (Collapsible on Mobile, Persistent on Desktop) */}
+          <div className={`bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-6 ${mobileFiltersOpen ? 'block' : 'hidden lg:block'}`}>
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
                 <Filter className="w-3.5 h-3.5 text-slate-500" />
@@ -292,6 +337,41 @@ export default function SearchPage() {
               >
                 Reset All
               </button>
+            </div>
+
+            {/* Quick Price Range Buttons */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Quick Price Tiers</label>
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => applyFilters({ minPrice: '', maxPrice: '10000' })}
+                  className="px-2.5 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 text-[11px] font-semibold text-slate-700 text-left"
+                >
+                  &lt; ₹10,000
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyFilters({ minPrice: '10000', maxPrice: '50000' })}
+                  className="px-2.5 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 text-[11px] font-semibold text-slate-700 text-left"
+                >
+                  ₹10k - ₹50k
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyFilters({ minPrice: '50000', maxPrice: '100000' })}
+                  className="px-2.5 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 text-[11px] font-semibold text-slate-700 text-left"
+                >
+                  ₹50k - ₹100k
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyFilters({ minPrice: '100000', maxPrice: '' })}
+                  className="px-2.5 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 text-[11px] font-semibold text-slate-700 text-left"
+                >
+                  &gt; ₹100,000
+                </button>
+              </div>
             </div>
 
             {/* Category Filter */}
@@ -493,17 +573,25 @@ export default function SearchPage() {
                       {/* Footer / Price */}
                       <div className={`p-4 pt-0 flex items-center justify-between ${viewMode === 'list' ? 'w-full sm:w-auto shrink-0 border-t sm:border-t-0 sm:border-l border-slate-100 sm:pl-5' : ''}`}>
                         <div>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Price</span>
-                          <span className="text-lg font-mono font-extrabold text-slate-900">
-                            {formatCredits(price)}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">PRICE</span>
+                            <span className="text-[9px] font-mono font-bold text-amber-800 bg-amber-50 px-1.5 rounded border border-amber-200">100 CR = ₹100</span>
+                          </div>
+                          <div className="flex items-baseline gap-1.5 mt-0.5">
+                            <span className="text-base sm:text-lg font-mono font-extrabold text-slate-900">
+                              ₹{Number(price).toLocaleString('en-IN')}
+                            </span>
+                            <span className="text-[11px] font-mono text-slate-500">
+                              ({Number(price).toLocaleString('en-IN')} Cr)
+                            </span>
+                          </div>
                         </div>
 
                         <Link
                           to={`/products/${prod.id}`}
-                          className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl px-4 py-2 text-xs font-bold transition-colors flex items-center gap-1 shadow-xs ml-4"
+                          className="bg-slate-900 hover:bg-rose-600 text-white rounded-xl px-3.5 py-2 text-xs font-bold transition-colors flex items-center gap-1 shadow-xs ml-3"
                         >
-                          <span>View Offer</span>
+                          <span>Compare</span>
                           <ArrowUpRight className="w-3.5 h-3.5" />
                         </Link>
                       </div>

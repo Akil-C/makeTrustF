@@ -12,6 +12,7 @@ import {
   Truck,
   Package,
   Coins,
+  Sparkles,
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import productService from '../../services/productService'
@@ -34,7 +35,7 @@ const MOCK_CHECKOUT_PRODUCT = {
 
 export default function CheckoutPage() {
   const { productId } = useParams()
-  const { walletBalance, refreshWallet } = useAuth()
+  const { walletBalance, refreshWallet, addDemoCredits, user } = useAuth()
   const navigate = useNavigate()
 
   const [product, setProduct] = useState(null)
@@ -85,6 +86,18 @@ export default function CheckoutPage() {
   const totalCost = itemPrice + platformFee + deliveryFee
   const currentBalance = Number(walletBalance || 0)
   const hasSufficientBalance = currentBalance >= totalCost
+
+  const handleClaimDemoCredits = async () => {
+    if (addDemoCredits) addDemoCredits(50000)
+    try {
+      if (user?.id) {
+        await walletService.adminTopUp({ targetUserId: user.id, amount: 50000, reason: 'Instant Demo Credit Faucet' })
+      }
+    } catch {
+      // client-side credits granted
+    }
+    toast.success('🎉 Added +50,000 Demo Credits (₹50,000) to your wallet!')
+  }
 
   const handleConfirmPurchase = async (e) => {
     e.preventDefault()
@@ -333,14 +346,34 @@ export default function CheckoutPage() {
                 </div>
 
                 {!hasSufficientBalance ? (
-                  <div className="pt-2 text-xs text-rose-600 font-medium flex items-center gap-1.5">
-                    <AlertTriangle className="w-4 h-4 shrink-0" />
-                    <span>Insufficient MC balance. Please add credits before checkout.</span>
+                  <div className="pt-2 space-y-2.5">
+                    <div className="text-xs text-rose-600 font-medium flex items-center gap-1.5">
+                      <AlertTriangle className="w-4 h-4 shrink-0" />
+                      <span>Insufficient MC balance to authorize this escrow order.</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleClaimDemoCredits}
+                      className="w-full py-2.5 px-3 bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-600 hover:to-rose-700 text-white rounded-xl font-bold text-xs shadow-xs transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span>Claim +50,000 Demo Credits Instantly</span>
+                    </button>
                   </div>
                 ) : (
-                  <div className="text-[11px] text-emerald-700 font-medium flex items-center gap-1 pt-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Remaining after escrow lock: {formatCredits(currentBalance - totalCost)}</span>
+                  <div className="pt-2 space-y-1">
+                    <div className="text-[11px] text-emerald-700 font-medium flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Remaining after escrow lock: {formatCredits(currentBalance - totalCost)}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleClaimDemoCredits}
+                      className="text-[10px] text-slate-500 hover:text-slate-900 underline flex items-center gap-1 pt-1 transition-colors"
+                    >
+                      <Sparkles className="w-3 h-3 text-amber-500" />
+                      <span>Need more test credits? Claim +50,000 MC</span>
+                    </button>
                   </div>
                 )}
               </div>
@@ -350,11 +383,42 @@ export default function CheckoutPage() {
                 type="button"
                 onClick={handleConfirmPurchase}
                 disabled={submitting || !hasSufficientBalance}
-                className="w-full py-4 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold transition-all shadow-sm flex items-center justify-center gap-2 text-xs sm:text-sm tracking-wide"
+                className="w-full py-4 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold transition-all shadow-sm flex items-center justify-center gap-2 text-xs sm:text-sm tracking-wide cursor-pointer"
               >
                 <ShoppingBag className="w-4 h-4" />
                 <span>{submitting ? 'Locking Escrow Funds...' : 'Authorize Escrow Order'}</span>
               </button>
+            </div>
+
+            {/* Visual Escrow Roadmap */}
+            <div className="bg-slate-900 text-white rounded-2xl p-6 border border-slate-800 shadow-sm space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <span className="text-xs font-bold uppercase tracking-wider text-rose-400 flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  Nexora Escrow Roadmap
+                </span>
+                <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                  100% BUYER SECURE
+                </span>
+              </div>
+              <div className="space-y-3">
+                {[
+                  { step: '1', title: 'Funds Locked in Escrow', desc: '100% of credits safely held in escrow vault upon authorization.' },
+                  { step: '2', title: 'Merchant Ships Product', desc: 'Seller prepares item & dispatches with tracking or meetup.' },
+                  { step: '3', title: 'Buyer Doorstep Inspection', desc: 'You inspect the item condition, serial numbers, and features.' },
+                  { step: '4', title: 'Release or Full Refund', desc: 'Tap Confirm to release payment, or Dispute for 100% instant refund.' },
+                ].map((s) => (
+                  <div key={s.step} className="flex items-start gap-3 text-xs">
+                    <span className="w-5 h-5 rounded-full bg-white/10 text-rose-400 font-bold flex items-center justify-center shrink-0 text-[10px]">
+                      {s.step}
+                    </span>
+                    <div>
+                      <div className="font-bold text-slate-200">{s.title}</div>
+                      <div className="text-[11px] text-slate-400 leading-snug">{s.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>

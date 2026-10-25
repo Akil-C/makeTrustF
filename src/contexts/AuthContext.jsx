@@ -236,6 +236,19 @@ export function AuthProvider({ children }) {
     return checkOne(requiredRole)
   }, [user])
 
+  const addDemoCredits = useCallback((amount = 50000) => {
+    setWalletBalance((prev) => {
+      const next = Number(prev || 0) + Number(amount)
+      setUser((u) => {
+        if (!u) return u
+        const updated = { ...u, walletBalance: next }
+        localStorage.setItem('user', JSON.stringify(updated))
+        return updated
+      })
+      return next
+    })
+  }, [])
+
   const value = {
     user,
     role: user?.role,
@@ -248,6 +261,7 @@ export function AuthProvider({ children }) {
     updateUser,
     hasRole,
     refreshWallet,
+    addDemoCredits,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
