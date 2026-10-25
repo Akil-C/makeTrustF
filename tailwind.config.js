@@ -31,7 +31,24 @@ export default {
           green: '#059669',
           gold: '#d97706',
           platinum: '#64748b',
-        }
+        },
+        ink: {
+          DEFAULT: '#0D0D0F',
+          secondary: '#43444A',
+          muted: '#6E6F76',
+        },
+        ground: {
+          light: '#EFEFEE',
+          stage: '#E4E4E2',
+          dark: '#0D0D0F',
+        },
+        signal: {
+          DEFAULT: '#2F5BFF',
+          dark: '#7C97FF',
+        },
+      },
+      transitionTimingFunction: {
+        tech: 'cubic-bezier(0.16, 1, 0.3, 1)',
       },
       fontFamily: {
         bodoni: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],

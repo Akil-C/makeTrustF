@@ -37,6 +37,14 @@
   border: 1px solid #E2E8F0;
 }
 
+/* Technical hairlines */
+.hairline-tech {
+  border-color: rgba(13, 13, 15, 0.12);
+}
+.hairline-tech-dark {
+  border-color: rgba(239, 239, 238, 0.12);
+}
+
 /* Highly visible, professional labels & badges */
 .furniture-text {
   font-size: 0.75rem; /* 12px */
