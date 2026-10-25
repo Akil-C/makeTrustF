@@ -62,15 +62,17 @@ export async function prewarmServer() {
 
   prewarmPromise = (async () => {
     try {
-      const res = await axios.get(`${API_URL}/api/health`, {
-        timeout: 25000,
+      // Race health probes simultaneously with fast responsive timeout
+      const ping1 = axios.get(`${API_URL}/api/health`, {
+        timeout: 12000,
         headers: { 'Cache-Control': 'no-cache' },
-      }).catch(async () => {
-        return await axios.get(`${API_URL}/health`, {
-          timeout: 25000,
-          headers: { 'Cache-Control': 'no-cache' },
-        })
       })
+      const ping2 = axios.get(`${API_URL}/health`, {
+        timeout: 12000,
+        headers: { 'Cache-Control': 'no-cache' },
+      })
+
+      const res = await Promise.race([ping1, ping2]).catch(() => Promise.any([ping1, ping2]))
 
       if (res && (res.status === 200 || res.status === 204)) {
         markBackendWarm()
