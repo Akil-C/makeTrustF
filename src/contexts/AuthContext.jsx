@@ -108,6 +108,21 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
+  const topUpDemo = useCallback(async (amount = 10000) => {
+    try {
+      if (user?.id) {
+        await walletService.topUpDemoWallet(user.id, amount)
+      }
+    } catch {
+      // fallback
+    }
+    setWalletBalance((prev) => {
+      const next = Number(prev || 0) + Number(amount)
+      return next
+    })
+    setUser((prev) => (prev ? { ...prev, walletBalance: Number(prev.walletBalance || 0) + Number(amount) } : prev))
+  }, [user])
+
   // ── Bootstrap: restore session on mount ─────────────────────────────────
   useEffect(() => {
     const bootstrap = async () => {
@@ -149,7 +164,6 @@ export function AuthProvider({ children }) {
         localStorage.setItem('user', JSON.stringify(normalized))
         await refreshWallet()
       } catch {
-        // If profile fetch fails but token exists, check if cached user is valid
         const cached = localStorage.getItem('user')
         if (!cached) {
           localStorage.removeItem('accessToken')
@@ -248,6 +262,7 @@ export function AuthProvider({ children }) {
     updateUser,
     hasRole,
     refreshWallet,
+    topUpDemo,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

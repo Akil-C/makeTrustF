@@ -159,7 +159,6 @@ export default function ProductDetailPage() {
         if (revList.length > 0) {
           setReviews(revList)
         } else {
-          // Seed sample verified review for realistic storefront experience
           setReviews([
             {
               id: 'rev-default-1',
@@ -207,22 +206,37 @@ export default function ProductDetailPage() {
     }
   }
 
-  const handleStartChat = async () => {
-    if (!product?.seller) return
+  const handleStartChat = async (inquiryText = '') => {
+    const sellerId = product?.seller?.id || product?.sellerId || 2
     setActionLoading(true)
     try {
-      await chatService.getOrCreateConversation(product.seller.id, product.id)
-      navigate('/buyer/chat')
+      if (chatService.getOrCreateConversation) {
+        await chatService.getOrCreateConversation(sellerId, product.id)
+      }
+      const queryParam = inquiryText ? `&inquiry=${encodeURIComponent(inquiryText)}` : ''
+      navigate(`/buyer/chat?sellerId=${sellerId}&productId=${product.id}${queryParam}`)
     } catch {
-      navigate('/buyer/chat')
+      navigate(`/buyer/chat?sellerId=${sellerId}&productId=${product.id}`)
     } finally {
       setActionLoading(false)
     }
   }
 
-  const handleShare = () => {
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: product?.title || 'Nexora Marketplace',
+          text: `Check out ${product?.title} on Nexora!`,
+          url: window.location.href,
+        })
+        return
+      } catch {
+        // Fallback
+      }
+    }
     if (navigator.clipboard) {
-      navigator.clipboard.writeText(window.location.href)
+      await navigator.clipboard.writeText(window.location.href)
       toast.success('Product link copied to clipboard!')
     }
   }
@@ -261,7 +275,7 @@ export default function ProductDetailPage() {
     : [product.primaryImageUrl || fallbackImage]
 
   return (
-    <div className="min-h-screen bg-[#F7F7F4] text-slate-900 flex flex-col justify-between font-sans">
+    <div className="min-h-screen bg-[#F7F7F4] text-slate-900 flex flex-col justify-between font-sans page-swift">
       <Navbar />
 
       <main className="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-8">
@@ -292,7 +306,7 @@ export default function ProductDetailPage() {
               />
               <button
                 onClick={handleShare}
-                className="absolute top-4 right-4 p-2.5 rounded-xl bg-white/90 hover:bg-white text-slate-700 hover:text-rose-600 transition-colors shadow-xs"
+                className="absolute top-4 right-4 p-2.5 rounded-xl bg-white/90 hover:bg-white text-slate-700 hover:text-rose-600 transition-colors shadow-xs swift-interactive"
                 title="Share link"
               >
                 <Share2 className="w-4 h-4" />
@@ -382,7 +396,7 @@ export default function ProductDetailPage() {
               <div className="space-y-3 pt-2">
                 <Link
                   to={`/checkout/${product.id}`}
-                  className="w-full bg-slate-900 hover:bg-rose-600 text-white rounded-xl font-bold py-4 transition-all flex items-center justify-center gap-2 text-sm shadow-md"
+                  className="w-full bg-slate-900 hover:bg-rose-600 text-white rounded-xl font-bold py-4 transition-all flex items-center justify-center gap-2 text-sm shadow-md swift-interactive"
                 >
                   <ShoppingBag className="w-4 h-4" />
                   <span>Buy with Marketplace Credits</span>
@@ -390,9 +404,9 @@ export default function ProductDetailPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <button
-                    onClick={handleStartChat}
+                    onClick={() => handleStartChat()}
                     disabled={actionLoading}
-                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-900 font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-xs shadow-xs"
+                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-900 font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-xs shadow-xs swift-interactive"
                   >
                     <MessageSquare className="w-4 h-4" />
                     <span>Chat with Seller</span>
@@ -400,11 +414,30 @@ export default function ProductDetailPage() {
 
                   <button
                     onClick={handleWishlistToggle}
-                    className="w-full bg-white border border-slate-300 hover:border-slate-800 rounded-xl font-semibold py-3 transition-colors flex items-center justify-center gap-2 text-xs text-slate-800 shadow-xs"
+                    className="w-full bg-white border border-slate-300 hover:border-slate-800 rounded-xl font-semibold py-3 transition-colors flex items-center justify-center gap-2 text-xs text-slate-800 shadow-xs swift-interactive"
                   >
                     <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-rose-600 text-rose-600' : ''}`} />
                     <span>{isWishlisted ? 'Saved' : 'Save to Wishlist'}</span>
                   </button>
+                </div>
+
+                {/* Quick Inquiries */}
+                <div className="pt-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                    Quick Seller Questions:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {['Is price negotiable?', 'Can we do safe local pickup today?', 'Is original invoice available?'].map((q) => (
+                      <button
+                        key={q}
+                        type="button"
+                        onClick={() => handleStartChat(q)}
+                        className="text-[11px] px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors swift-interactive text-left"
+                      >
+                        "{q}"
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -624,7 +657,7 @@ export default function ProductDetailPage() {
                 <Link
                   key={item.id}
                   to={`/products/${item.id}`}
-                  className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-md transition-all group flex flex-col justify-between"
+                  className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-md transition-all group flex flex-col justify-between swift-interactive"
                 >
                   <div className="relative aspect-4/3 bg-slate-100 overflow-hidden">
                     <img

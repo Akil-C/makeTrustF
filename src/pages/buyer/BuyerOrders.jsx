@@ -152,7 +152,7 @@ export default function BuyerOrders() {
       : orders.filter((o) => o.status === selectedStatus)
 
   return (
-    <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-6 font-sans">
+    <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-6 font-sans page-swift">
       <DemoDisclaimer />
 
       {/* Top Header Section */}
@@ -176,7 +176,7 @@ export default function BuyerOrders() {
             <button
               key={st}
               onClick={() => setSelectedStatus(st)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs swift-interactive ${
                 selectedStatus === st
                   ? 'bg-slate-900 text-white'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
@@ -203,7 +203,7 @@ export default function BuyerOrders() {
           <div className="pt-2">
             <Link
               to="/search"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-colors shadow-xs"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-rose-600 text-white font-bold text-xs transition-colors shadow-xs swift-interactive"
             >
               <ShoppingBag className="w-4 h-4" />
               <span>Explore Marketplace</span>
@@ -277,6 +277,40 @@ export default function BuyerOrders() {
                   </div>
                 </div>
 
+                {/* Mini Escrow Progress Stepper */}
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                    <div className={`p-2 rounded-lg text-[11px] font-bold ${
+                      order.status !== 'CANCELLED' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-500'
+                    }`}>
+                      ✓ 1. Escrow Locked
+                    </div>
+                    <div className={`p-2 rounded-lg text-[11px] font-bold ${
+                      ['SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'BUYER_CONFIRMED', 'COMPLETED'].includes(order.status)
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : order.status === 'CONFIRMED'
+                        ? 'bg-blue-100 text-blue-800 animate-pulse'
+                        : 'bg-slate-200/70 text-slate-500'
+                    }`}>
+                      2. Handover / Courier
+                    </div>
+                    <div className={`p-2 rounded-lg text-[11px] font-bold ${
+                      ['DELIVERED', 'BUYER_CONFIRMED', 'COMPLETED'].includes(order.status)
+                        ? isDelivered ? 'bg-amber-100 text-amber-800 ring-1 ring-amber-300 animate-pulse' : 'bg-emerald-100 text-emerald-800'
+                        : 'bg-slate-200/70 text-slate-500'
+                    }`}>
+                      3. Inspect Item
+                    </div>
+                    <div className={`p-2 rounded-lg text-[11px] font-bold ${
+                      ['BUYER_CONFIRMED', 'COMPLETED'].includes(order.status)
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-slate-200/70 text-slate-500'
+                    }`}>
+                      4. Payout Released
+                    </div>
+                  </div>
+                </div>
+
                 {/* Actions Bar */}
                 <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-2 text-xs text-slate-500">
@@ -290,7 +324,7 @@ export default function BuyerOrders() {
                       <button
                         type="button"
                         onClick={() => handleConfirmDelivery(order.id)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors swift-interactive"
                       >
                         <CheckCircle className="w-3.5 h-3.5" />
                         <span>Confirm Delivery (Release Funds)</span>
@@ -302,7 +336,7 @@ export default function BuyerOrders() {
                       <button
                         type="button"
                         onClick={() => openReviewModal(order)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-xs transition-colors"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-xs transition-colors swift-interactive"
                       >
                         <Star className="w-3.5 h-3.5" />
                         <span>Write Verified Review</span>
@@ -389,7 +423,7 @@ export default function BuyerOrders() {
                 <button
                   type="submit"
                   disabled={submittingReview}
-                  className="px-5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-xs transition-colors"
+                  className="px-5 py-2 rounded-lg bg-slate-900 hover:bg-rose-600 text-white text-xs font-bold shadow-xs transition-colors swift-interactive"
                 >
                   {submittingReview ? 'Submitting...' : 'Post Verified Review'}
                 </button>

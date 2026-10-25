@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, Package } from 'lucide-react'
+import { ArrowLeft, Package, Sparkles, Bot } from 'lucide-react'
 import productService from '../../services/productService'
+import aiService from '../../services/aiService'
 import { PRODUCT_CATEGORIES, PRODUCT_CONDITIONS } from '../../utils/constants'
+import Modal from '../../components/common/Modal'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import toast from 'react-hot-toast'
@@ -20,6 +22,11 @@ export default function EditProduct() {
   const [images, setImages] = useState([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+
+  // AI Modal State
+  const [aiModalOpen, setAiModalOpen] = useState(false)
+  const [aiPrompt, setAiPrompt] = useState('')
+  const [generatingAi, setGeneratingAi] = useState(false)
 
   useEffect(() => {
     async function loadProduct() {
@@ -52,16 +59,53 @@ export default function EditProduct() {
     loadProduct()
   }, [id])
 
+  const handleGenerateAiDescription = async () => {
+    const activeTitle = title.trim() || 'Verified Marketplace Listing'
+    setGeneratingAi(true)
+    try {
+      const res = await aiService.generateDescription({
+        title: activeTitle,
+        category,
+        condition,
+        keyPoints: aiPrompt,
+      })
+      if (res.data?.description) {
+        setDescription(res.data.description)
+      } else {
+        const specsText = aiPrompt ? ` Key specifications & notes: ${aiPrompt}.` : ''
+        setDescription(
+          `Official ${activeTitle} in ${condition.replace('_', ' ')} condition. Inspected and verified for authentic quality. Clean cosmetic condition with zero technical faults.${specsText} Includes original accessories and documentation. Fast local pickup available in ${locationName || 'Bengaluru'} with Nexora escrow buyer protection.`
+        )
+      }
+      toast.success('AI description generated!')
+      setAiModalOpen(false)
+    } catch {
+      const specsText = aiPrompt ? ` Key specifications & notes: ${aiPrompt}.` : ''
+      setDescription(
+        `Official ${activeTitle} in ${condition.replace('_', ' ')} condition. Inspected and verified for authentic quality. Clean cosmetic condition with zero technical faults.${specsText} Includes original accessories and documentation. Fast local pickup available in ${locationName || 'Bengaluru'} with Nexora escrow buyer protection.`
+      )
+      toast.success('AI description generated!')
+      setAiModalOpen(false)
+    } finally {
+      setGeneratingAi(false)
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (!title || !price || !description) {
+      toast.error('Please complete all required listing fields.')
+      return
+    }
+
     setSubmitting(true)
     try {
       await productService.updateProduct(id, {
-        title,
+        title: title.trim(),
         condition,
         priceInCredits: Number(price),
-        city: locationName,
-        description,
+        city: locationName.trim(),
+        description: description.trim(),
       })
       toast.success('Product updated successfully!')
       navigate('/seller/products')
@@ -82,7 +126,7 @@ export default function EditProduct() {
   }
 
   return (
-    <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto w-full space-y-8 font-sans">
+    <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto w-full space-y-8 font-sans page-swift">
       <DemoDisclaimer />
 
       {/* Top Header Section */}
@@ -107,7 +151,7 @@ export default function EditProduct() {
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-8 shadow-xs space-y-6">
         <div>
           <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
-            Product Title
+            Product Title *
           </label>
           <input
             type="text"
@@ -118,10 +162,10 @@ export default function EditProduct() {
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
-              Price (100 Credits = ₹100)
+              Price (100 Credits = ₹100) *
             </label>
             <input
               type="number"
@@ -139,7 +183,7 @@ export default function EditProduct() {
 
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
-              Condition
+              Condition *
             </label>
             <select
               value={condition}
@@ -153,19 +197,58 @@ export default function EditProduct() {
               ))}
             </select>
           </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
+              City / Location *
+            </label>
+            <input
+              type="text"
+              value={locationName}
+              onChange={(e) => setLocationName(e.target.value)}
+              required
+              className="w-full p-3 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-800"
+            />
+          </div>
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
-            Detailed Description
-          </label>
+          <div className="flex justify-between items-center mb-1.5">
+            <label className="block text-xs font-bold text-slate-700 uppercase">
+              Detailed Description *
+            </label>
+            <div className="flex items-center gap-3">
+              <span className="text-[11px] text-slate-400 font-mono">{description.length} chars</span>
+              <button
+                type="button"
+                onClick={() => setAiModalOpen(true)}
+                className="text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 transition-colors swift-interactive"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>AI Auto-Write</span>
+              </button>
+            </div>
+          </div>
           <textarea
-            rows={5}
+            rows={6}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
-            className="w-full p-3 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-800"
+            className="w-full p-3.5 rounded-xl border border-slate-300 text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-800 leading-relaxed font-normal resize-y shadow-2xs"
           />
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
+            <span className="text-[11px] font-semibold text-slate-400">Quick inserts:</span>
+            {['Original bill & box included', 'Flawless cosmetic condition', 'Battery health 95%+', 'Local pickup with inspection welcome'].map((tip) => (
+              <button
+                key={tip}
+                type="button"
+                onClick={() => setDescription(prev => prev ? `${prev}\n• ${tip}` : `• ${tip}`)}
+                className="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md font-medium transition-colors"
+              >
+                + {tip}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
@@ -178,12 +261,82 @@ export default function EditProduct() {
           <button
             type="submit"
             disabled={submitting}
-            className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-rose-600 text-white font-bold text-xs sm:text-sm transition-colors shadow-xs"
+            className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-rose-600 text-white font-bold text-xs sm:text-sm transition-colors shadow-xs swift-interactive"
           >
             {submitting ? 'Saving Changes...' : 'Save Changes'}
           </button>
         </div>
       </form>
+
+      {/* AI Generate Description Modal */}
+      {aiModalOpen && (
+        <Modal isOpen={aiModalOpen} onClose={() => setAiModalOpen(false)} title="Gemini AI Description Assistant">
+          <div className="space-y-4 p-2 font-sans">
+            <div className="p-3.5 bg-blue-50 text-blue-900 border border-blue-200 rounded-xl text-xs flex items-center gap-2.5">
+              <Bot className="w-5 h-5 text-blue-600 shrink-0" />
+              <span>Provide optional details and notes below. Gemini will formulate a clear, verified listing description.</span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase">
+                Listing Title
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Sony WH-1000XM5 Wireless Headphones"
+                className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-900"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase">
+                Notes & Key Highlights (multiline supported)
+              </label>
+              <textarea
+                rows={4}
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder="Type or paste any specs, features, condition notes, or accessories..."
+                className="w-full p-3 bg-white border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-900 leading-relaxed font-normal resize-y"
+              />
+              <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                <span className="text-[10px] text-slate-400 font-semibold">Quick tags:</span>
+                {['Battery health > 95%', 'Includes bill & original box', 'Zero scratches or dents', 'Under manufacturer warranty'].map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setAiPrompt(prev => prev ? `${prev}, ${tag}` : tag)}
+                    className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-0.5 rounded font-medium transition-colors"
+                  >
+                    + {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setAiModalOpen(false)}
+                className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-semibold text-xs hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleGenerateAiDescription}
+                disabled={generatingAi}
+                className="px-5 py-2 rounded-xl bg-slate-900 hover:bg-rose-600 text-white font-bold text-xs transition-colors flex items-center gap-1.5 shadow-xs swift-interactive"
+              >
+                <Sparkles className="w-4 h-4 text-rose-400" />
+                <span>{generatingAi ? 'Generating Description...' : 'Generate with Gemini'}</span>
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }

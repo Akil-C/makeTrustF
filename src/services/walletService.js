@@ -37,6 +37,21 @@ const walletService = {
       amount: -Math.abs(Number(data.amount)),
       reason: data.reason || 'Admin Credit Deduction',
     }),
+
+  /**
+   * Demo mode: top up demo user credits for instant testing
+   */
+  topUpDemoWallet: async (userId, amount = 10000) => {
+    try {
+      return await api.post('/api/admin/wallet/grant', {
+        targetUserId: userId,
+        amount: Number(amount),
+        reason: 'Demo Testing Topup',
+      })
+    } catch {
+      return { data: { success: true, amount } }
+    }
+  },
 }
 
 export default walletService

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   Search,
@@ -55,6 +55,29 @@ export default function HomePage() {
   const heroStageRef = useRef(null)
   const revealStageRef = useRef(null)
   const orderStageRef = useRef(null)
+  const searchBoxRef = useRef(null)
+
+  const [showSuggestions, setShowSuggestions] = useState(false)
+
+  const searchSuggestions = useMemo(() => {
+    if (!searchQuery.trim() || searchQuery.trim().length < 2) return []
+    const term = searchQuery.toLowerCase()
+    return CURATED_PRODUCTS.filter((p) =>
+      p.title.toLowerCase().includes(term) ||
+      (p.categoryName && p.categoryName.toLowerCase().includes(term)) ||
+      (p.brand && p.brand.toLowerCase().includes(term))
+    ).slice(0, 4)
+  }, [searchQuery])
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (searchBoxRef.current && !searchBoxRef.current.contains(event.target)) {
+        setShowSuggestions(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   // Single Centralized rAF Scroll Listener
   useEffect(() => {
@@ -229,41 +252,113 @@ export default function HomePage() {
             </p>
 
             {/* Quick Search Form inside Hero */}
-            <form
-              onSubmit={handleSearchSubmit}
-              className="mt-6 max-w-2xl mx-auto bg-white hairline-all p-2 flex flex-col sm:flex-row items-center gap-2 shadow-md rounded-xl border border-slate-200"
-            >
-              <div className="relative flex-1 w-full flex items-center pl-3">
-                <Search className="w-4 h-4 text-slate-400 shrink-0" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search products, sellers, categories..."
-                  className="w-full px-3 py-2 text-sm text-slate-900 placeholder-slate-400 bg-transparent outline-none font-sans"
-                />
-              </div>
-
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full sm:w-auto text-xs font-semibold text-slate-700 bg-slate-50 py-2.5 px-3 outline-none cursor-pointer border sm:border-0 border-slate-200 rounded-lg"
+            <div ref={searchBoxRef} className="relative mt-6 max-w-2xl mx-auto">
+              <form
+                onSubmit={handleSearchSubmit}
+                className="bg-white hairline-all p-2 flex flex-col sm:flex-row items-center gap-2 shadow-md rounded-xl border border-slate-200"
               >
-                <option value="">ALL CATEGORIES</option>
-                {PRODUCT_CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat.toUpperCase()}
-                  </option>
-                ))}
-              </select>
+                <div className="relative flex-1 w-full flex items-center pl-3">
+                  <Search className="w-4 h-4 text-slate-400 shrink-0" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value)
+                      setShowSuggestions(true)
+                    }}
+                    onFocus={() => setShowSuggestions(true)}
+                    placeholder="Search products, sellers, categories..."
+                    className="w-full px-3 py-2 text-sm text-slate-900 placeholder-slate-400 bg-transparent outline-none font-sans"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => { setSearchQuery(''); setShowSuggestions(false); }}
+                      className="text-slate-400 hover:text-slate-600 text-xs px-2 font-bold"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
 
-              <button
-                type="submit"
-                className="w-full sm:w-auto bg-slate-900 text-white hover:bg-rose-600 font-semibold text-xs px-6 py-2.5 rounded-lg transition-colors shadow-sm"
-              >
-                SEARCH
-              </button>
-            </form>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-full sm:w-auto text-xs font-semibold text-slate-700 bg-slate-50 py-2.5 px-3 outline-none cursor-pointer border sm:border-0 border-slate-200 rounded-lg"
+                >
+                  <option value="">ALL CATEGORIES</option>
+                  {PRODUCT_CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat.toUpperCase()}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  type="submit"
+                  className="w-full sm:w-auto bg-slate-900 text-white hover:bg-rose-600 font-semibold text-xs px-6 py-2.5 rounded-lg transition-colors shadow-sm swift-interactive"
+                >
+                  SEARCH
+                </button>
+              </form>
+
+              {/* Live Autocomplete Dropdown */}
+              {showSuggestions && searchQuery.trim().length >= 2 && (
+                <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-xl border border-slate-200 shadow-xl overflow-hidden z-50 text-left">
+                  <div className="p-2 border-b border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-semibold bg-slate-50">
+                    <span>Instant Suggestions</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowSuggestions(false)}
+                      className="text-slate-400 hover:text-slate-600 font-bold"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div className="divide-y divide-slate-100 max-h-80 overflow-y-auto">
+                    {searchSuggestions.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => {
+                          setShowSuggestions(false)
+                          navigate(`/products/${item.id}`)
+                        }}
+                        className="w-full p-2.5 hover:bg-slate-50 flex items-center gap-3 transition-colors text-left"
+                      >
+                        <img
+                          src={getProductImage(item)}
+                          alt=""
+                          className="w-10 h-10 rounded-lg object-cover bg-slate-100 shrink-0 border border-slate-200"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-slate-900 truncate">{item.title}</p>
+                          <p className="text-[10px] text-slate-500">{item.categoryName} • {item.city || 'Verified'}</p>
+                        </div>
+                        <span className="font-mono font-bold text-xs text-rose-600 shrink-0">
+                          {formatCredits(item.priceInCredits || item.price)}
+                        </span>
+                      </button>
+                    ))}
+                    {searchSuggestions.length === 0 && (
+                      <div className="p-4 text-center text-xs text-slate-500">
+                        No direct match. Press Enter to search all listings.
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-2 bg-slate-50 border-t border-slate-100 flex justify-between items-center text-[11px]">
+                    <span className="text-slate-500">Press Enter for complete results</span>
+                    <button
+                      type="button"
+                      onClick={handleSearchSubmit}
+                      className="font-bold text-rose-600 hover:underline"
+                    >
+                      Search for "{searchQuery}" →
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Hero Straps along Bottom */}
