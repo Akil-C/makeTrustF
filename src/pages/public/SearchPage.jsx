@@ -18,7 +18,7 @@ import {
 import productService from '../../services/productService'
 import wishlistService from '../../services/wishlistService'
 import { formatCredits } from '../../utils/formatters'
-import { getProductImage, filterProducts, CURATED_PRODUCTS } from '../../utils/productsData'
+import { getProductImage, filterProducts, CURATED_PRODUCTS, getCustomProducts } from '../../utils/productsData'
 import Navbar from '../../components/common/Navbar'
 import Footer from '../../components/common/Footer'
 import EmptyState from '../../components/common/EmptyState'
@@ -125,18 +125,23 @@ export default function SearchPage() {
           size: 12,
         }
 
-        const res = await productService.searchProducts(params)
-        let list = res.data?.content || res.data || []
+        let apiList = []
+        try {
+          const res = await productService.searchProducts(params)
+          apiList = res.data?.content || res.data || []
+        } catch {
+          // backend offline or sleep mode
+        }
 
         // Enhance backend products with verified high-resolution photography
-        const enhancedApi = list.map((item) => ({
+        const enhancedApi = apiList.map((item) => ({
           ...item,
           primaryImageUrl: getProductImage(item),
           category: item.categoryName || item.category || catParam || 'General',
         }))
 
-        // Merge with matching curated products to guarantee all 10 categories are populated
-        const curatedMatches = filterProducts({
+        // Filter local catalog (which contains all custom seller listings + curated catalog)
+        const localMatches = filterProducts({
           keyword: qParam,
           categoryId: catId,
           categoryName: catParam,
@@ -147,11 +152,49 @@ export default function SearchPage() {
           sortBy: sortParam,
         })
 
-        const merged = [...enhancedApi]
-        curatedMatches.forEach((cp) => {
-          if (!merged.some((m) => String(m.id) === String(cp.id) || m.title.toLowerCase() === cp.title.toLowerCase())) {
-            merged.push(cp)
+        // Merge products: custom seller products first so new listings immediately appear at the top
+        const merged = []
+        const seenIds = new Set()
+        const seenTitles = new Set()
+
+        const addProduct = (p) => {
+          if (!p || p.status === 'HIDDEN') return
+          const key = String(p.id)
+          const titleKey = (p.title || '').trim().toLowerCase()
+          if (!seenIds.has(key) && !seenTitles.has(titleKey)) {
+            seenIds.add(key)
+            if (titleKey) seenTitles.add(titleKey)
+            merged.push(p)
           }
+        }
+
+        // 1. Newly created seller products take priority
+        const customSellerMatches = localMatches.filter(
+          (p) => !CURATED_PRODUCTS.some((cp) => String(cp.id) === String(p.id))
+        )
+        customSellerMatches.forEach(addProduct)
+
+        // 2. Backend API products
+        enhancedApi.forEach(addProduct)
+
+        // 3. Remaining curated catalog products
+        localMatches.forEach(addProduct)
+
+        // Sort the entire combined catalog according to active sort choice
+        merged.sort((a, b) => {
+          const priceA = a.priceInCredits || a.price || 0
+          const priceB = b.priceInCredits || b.price || 0
+          if (sortParam === 'price_low' || sortParam === 'price_asc') return priceA - priceB
+          if (sortParam === 'price_high' || sortParam === 'price_desc') return priceB - priceA
+          if (sortParam === 'views') return (b.views || 0) - (a.views || 0)
+
+          // Newest default: recent seller listings sort to the top
+          const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0
+          const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0
+          if (timeA || timeB) {
+            if (timeA !== timeB) return timeB - timeA
+          }
+          return Number(b.id) - Number(a.id)
         })
 
         setProducts(merged)
@@ -179,6 +222,16 @@ export default function SearchPage() {
     }
 
     loadData()
+
+    // Real-time synchronization when a seller creates a product in another tab/component
+    const handleSync = () => loadData()
+    window.addEventListener('nx_product_created', handleSync)
+    window.addEventListener('storage', handleSync)
+
+    return () => {
+      window.removeEventListener('nx_product_created', handleSync)
+      window.removeEventListener('storage', handleSync)
+    }
   }, [qParam, catParam, condParam, cityParam, minParam, maxParam, sortParam, pageParam])
 
   const applyFilters = (overrides = {}) => {

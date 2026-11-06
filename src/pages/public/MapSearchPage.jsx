@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import productService from '../../services/productService'
 import { formatCredits } from '../../utils/formatters'
-import { getProductImage, CURATED_PRODUCTS } from '../../utils/productsData'
+import { getProductImage, getAllProducts } from '../../utils/productsData'
 import Navbar from '../../components/common/Navbar'
 import Footer from '../../components/common/Footer'
 import SellerLevelBadge from '../../components/common/SellerLevelBadge'
@@ -49,11 +49,11 @@ export default function MapSearchPage() {
           const catalogRes = await productService.searchProducts({ size: 15 })
           list = catalogRes.data?.content || []
         } catch {
-          list = CURATED_PRODUCTS.slice(0, 15)
+          list = getAllProducts().slice(0, 15)
         }
       }
       if (list.length === 0) {
-        list = CURATED_PRODUCTS.slice(0, 15)
+        list = getAllProducts().slice(0, 15)
       }
 
       const formatted = list.map((p, idx) => ({

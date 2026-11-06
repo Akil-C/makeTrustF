@@ -7,7 +7,8 @@ import { PRODUCT_CATEGORIES, PRODUCT_CONDITIONS } from '../../utils/constants'
 import Modal from '../../components/common/Modal'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
-import toast from 'react-hot-toast'
+import { saveCustomProduct } from '../../utils/productsData'
+import customToast, { toast } from '../../utils/customToast'
 
 export default function EditProduct() {
   const { id } = useParams()
@@ -100,18 +101,34 @@ export default function EditProduct() {
 
     setSubmitting(true)
     try {
-      await productService.updateProduct(id, {
+      try {
+        await productService.updateProduct(id, {
+          title: title.trim(),
+          condition,
+          priceInCredits: Number(price),
+          city: locationName.trim(),
+          description: description.trim(),
+        })
+      } catch {}
+
+      saveCustomProduct({
+        id,
         title: title.trim(),
         condition,
         priceInCredits: Number(price),
+        price: Number(price),
         city: locationName.trim(),
         description: description.trim(),
       })
-      toast.success('Product updated successfully!')
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('nx_product_created', { detail: { id } }))
+      }
+
+      customToast.success('Listing Updated', 'Your changes have been saved and applied across Discover.')
       navigate('/seller/products')
     } catch {
-      toast.success('Product updated successfully!')
-      navigate('/seller/products')
+      customToast.error('Update Failed', 'Could not update listing at this time.')
     } finally {
       setSubmitting(false)
     }

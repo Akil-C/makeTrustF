@@ -232,9 +232,12 @@ export default function CreateProduct() {
       }
 
       saveCustomProduct(customProductObj)
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('nx_product_created', { detail: customProductObj }))
+      }
       customToast.success(
         'Listing Published',
-        'Your listing is now visible to all marketplace users and queued for admin verification.',
+        'Your listing is now visible to all marketplace users on Discover and queued for admin verification.',
         { duration: 4500 }
       )
       navigate('/seller/products')

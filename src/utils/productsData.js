@@ -1385,6 +1385,13 @@ export function filterProducts({
     if (sortBy === 'price_low' || sortBy === 'price_asc') return priceA - priceB;
     if (sortBy === 'price_high' || sortBy === 'price_desc') return priceB - priceA;
     if (sortBy === 'views') return (b.views || 0) - (a.views || 0);
-    return b.id - a.id; // newest default
+
+    // Newest default: newly added seller listings with recent ISO timestamps sort first
+    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    if (timeA || timeB) {
+      if (timeA !== timeB) return timeB - timeA;
+    }
+    return Number(b.id) - Number(a.id);
   });
 }

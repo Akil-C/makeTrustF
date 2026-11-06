@@ -137,32 +137,76 @@ export default function HomePage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const res = await productService.getTrendingProducts(12)
-        const apiProds = res?.data?.content || []
-        if (apiProds.length > 0) {
-          const enhancedApi = apiProds.map((p) => ({
-            ...p,
-            primaryImageUrl: getProductImage(p),
-            category: p.categoryName || p.category || 'Electronics',
-          }))
-          // Merge with curated items to ensure minimum 12 products across multiple categories
-          const merged = [...enhancedApi]
-          CURATED_PRODUCTS.forEach((cp) => {
-            if (!merged.some((m) => String(m.id) === String(cp.id) || m.title.toLowerCase() === cp.title.toLowerCase())) {
-              merged.push(cp)
-            }
-          })
-          setFeaturedProducts(merged.slice(0, 12))
-        } else {
-          setFeaturedProducts(CURATED_PRODUCTS.slice(0, 12))
+        const customProds = getCustomProducts().filter((p) => p.status !== 'HIDDEN')
+        let apiProds = []
+        try {
+          const res = await productService.getTrendingProducts(12)
+          apiProds = res?.data?.content || []
+        } catch {
+          // backend sleeping / offline
         }
+
+        const enhancedApi = apiProds.map((p) => ({
+          ...p,
+          primaryImageUrl: getProductImage(p),
+          category: p.categoryName || p.category || 'Electronics',
+        }))
+
+        const merged = []
+        const seenIds = new Set()
+        const seenTitles = new Set()
+
+        const addProduct = (p) => {
+          if (!p || p.status === 'HIDDEN') return
+          const key = String(p.id)
+          const titleKey = (p.title || '').trim().toLowerCase()
+          if (!seenIds.has(key) && !seenTitles.has(titleKey)) {
+            seenIds.add(key)
+            if (titleKey) seenTitles.add(titleKey)
+            merged.push(p)
+          }
+        }
+
+        // 1. Newly created seller products take top priority in the Discovery feed
+        customProds.forEach(addProduct)
+
+        // 2. Add backend trending products
+        enhancedApi.forEach(addProduct)
+
+        // 3. Fill remaining positions with curated catalog items
+        CURATED_PRODUCTS.forEach(addProduct)
+
+        // Sort by newest so new seller creations appear on the Discovery section
+        merged.sort((a, b) => {
+          const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0
+          const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0
+          if (timeA || timeB) {
+            if (timeA !== timeB) return timeB - timeA
+          }
+          return Number(b.id) - Number(a.id)
+        })
+
+        setFeaturedProducts(merged.slice(0, 12))
       } catch (err) {
-        setFeaturedProducts(CURATED_PRODUCTS.slice(0, 12))
+        const customProds = getCustomProducts().filter((p) => p.status !== 'HIDDEN')
+        const fallback = [...customProds, ...CURATED_PRODUCTS]
+        setFeaturedProducts(fallback.slice(0, 12))
       } finally {
         setLoading(false)
       }
     }
+
     loadData()
+
+    // Real-time synchronization: when a seller creates a product, the discovery feed updates immediately!
+    const handleSync = () => loadData()
+    window.addEventListener('nx_product_created', handleSync)
+    window.addEventListener('storage', handleSync)
+
+    return () => {
+      window.removeEventListener('nx_product_created', handleSync)
+      window.removeEventListener('storage', handleSync)
+    }
   }, [])
 
   const handleSearchSubmit = (e) => {
