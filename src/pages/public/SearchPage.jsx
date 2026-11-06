@@ -9,6 +9,8 @@ import {
   ArrowUpRight,
   MapPin,
   ShieldCheck,
+  CheckCircle2,
+  Clock,
   RotateCcw,
   Compass,
   X,
@@ -543,6 +545,21 @@ export default function SearchPage() {
                           >
                             <Heart className={`w-3.5 h-3.5 ${wishlistIds.has(prod.id) ? 'fill-rose-600 text-rose-600' : ''}`} />
                           </button>
+                          
+                          {/* Admin Verification Badge */}
+                          <div className="absolute bottom-2 left-2 flex items-center gap-1">
+                            {prod.isVerifiedByAdmin || prod.adminStatus === 'VERIFIED' ? (
+                              <span className="bg-emerald-600/90 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-xs flex items-center gap-1">
+                                <CheckCircle2 className="w-2.5 h-2.5" />
+                                Verified
+                              </span>
+                            ) : (
+                              <span className="bg-amber-600/90 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-xs flex items-center gap-1">
+                                <Clock className="w-2.5 h-2.5" />
+                                Under Review
+                              </span>
+                            )}
+                          </div>
                         </div>
 
                         {/* Content */}

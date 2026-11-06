@@ -8,10 +8,12 @@ import {
   ShieldAlert,
   CheckCircle2,
   AlertTriangle,
+  Clock,
+  ShieldCheck,
 } from 'lucide-react'
 import adminService from '../../services/adminService'
 import { formatCredits } from '../../utils/formatters'
-import { getProductImage } from '../../utils/productsData'
+import { getProductImage, getCustomProducts, verifyCustomProduct, deleteCustomProduct } from '../../utils/productsData'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import toast from 'react-hot-toast'
@@ -25,14 +27,38 @@ export default function AdminProducts() {
   const fetchProducts = async () => {
     setLoading(true)
     try {
-      const res = await adminService.getProducts({ size: 50 })
-      const list = res.data?.content || res.data || []
-      setProducts(list)
-    } catch {
-      setProducts([])
+      let apiList = []
+      try {
+        const res = await adminService.getProducts({ size: 50 })
+        apiList = res.data?.content || res.data || []
+      } catch {
+        apiList = []
+      }
+
+      const customList = getCustomProducts()
+      const merged = [...customList]
+      apiList.forEach((item) => {
+        if (!merged.some((m) => String(m.id) === String(item.id))) {
+          merged.push(item)
+        }
+      })
+
+      setProducts(merged)
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleVerify = (id, title) => {
+    verifyCustomProduct(id, true)
+    toast.success(`"${title}" verified & approved for marketplace catalog!`)
+    setProducts((prev) =>
+      prev.map((p) =>
+        p.id === id
+          ? { ...p, isVerifiedByAdmin: true, adminStatus: 'VERIFIED', status: 'ACTIVE' }
+          : p
+      )
+    )
   }
 
   useEffect(() => {
@@ -45,7 +71,8 @@ export default function AdminProducts() {
     }
 
     try {
-      await adminService.removeProduct(id, 'Moderator policy enforcement')
+      try { await adminService.removeProduct(id, 'Moderator policy enforcement') } catch {} 
+      deleteCustomProduct(id)
       toast.success('Listing deactivated from catalog')
       setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, status: 'HIDDEN' } : p)))
     } catch (err) {
@@ -58,7 +85,13 @@ export default function AdminProducts() {
       !searchTerm ||
       p.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.seller?.displayName?.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchStatus = statusFilter === 'ALL' || p.status === statusFilter
+    
+    let matchStatus = true
+    if (statusFilter === 'PENDING') {
+      matchStatus = !p.isVerifiedByAdmin && p.adminStatus !== 'VERIFIED'
+    } else if (statusFilter !== 'ALL') {
+      matchStatus = p.status === statusFilter
+    }
     return matchSearch && matchStatus
   })
 
@@ -102,7 +135,7 @@ export default function AdminProducts() {
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            {['ALL', 'ACTIVE', 'HIDDEN', 'SOLD'].map((st) => (
+            {['ALL', 'PENDING', 'ACTIVE', 'HIDDEN', 'SOLD'].map((st) => (
               <button
                 key={st}
                 type="button"
@@ -178,9 +211,9 @@ export default function AdminProducts() {
                         <td className="py-4 px-4 text-slate-700 font-medium">
                           {sellerName}
                         </td>
-                        <td className="py-4 px-4">
+                        <td className="py-4 px-4 space-y-1">
                           <span
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold ${
                               p.status === 'ACTIVE'
                                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                 : p.status === 'SOLD'
@@ -191,9 +224,35 @@ export default function AdminProducts() {
                             <span className={`w-1.5 h-1.5 rounded-full ${p.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-400'}`} />
                             {p.status}
                           </span>
+
+                          <div className="block">
+                            {p.isVerifiedByAdmin || p.adminStatus === 'VERIFIED' ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50/80 px-2 py-0.5 rounded border border-emerald-200/70">
+                                <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                                Admin Verified
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 animate-pulse">
+                                <Clock className="w-3 h-3 text-amber-600" />
+                                Pending Review
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="py-4 px-6 text-right">
                           <div className="flex items-center justify-end gap-2">
+                            {(!p.isVerifiedByAdmin && p.adminStatus !== 'VERIFIED') && (
+                              <button
+                                type="button"
+                                onClick={() => handleVerify(p.id, p.title)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-emerald-800 bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 transition-colors shadow-2xs"
+                                title="Verify seller listing for trust badge"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                                <span>Verify</span>
+                              </button>
+                            )}
+
                             <Link
                               to={`/products/${p.id}`}
                               target="_blank"

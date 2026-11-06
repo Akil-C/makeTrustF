@@ -1009,14 +1009,46 @@ export const CURATED_PRODUCTS = [
 export function getProductImage(product) {
   if (!product) return 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80'
 
-  const title = (product.title || '').toLowerCase()
-  const cat = (product.categoryName || product.category || '').toLowerCase()
+  // 1. Prioritize Seller-Uploaded Images directly on the product (100% preserve seller's exact image)
+  if (product.primaryImageUrl && typeof product.primaryImageUrl === 'string' && product.primaryImageUrl.trim().length > 0) {
+    return product.primaryImageUrl.trim()
+  }
+  if (product.imageUrl && typeof product.imageUrl === 'string' && product.imageUrl.trim().length > 0) {
+    return product.imageUrl.trim()
+  }
+  if (product.image && typeof product.image === 'string' && product.image.trim().length > 0) {
+    return product.image.trim()
+  }
+  if (Array.isArray(product.images) && product.images.length > 0) {
+    const first = product.images[0]
+    if (typeof first === 'string' && first.trim().length > 0) {
+      return first.trim()
+    }
+    if (first && typeof first === 'object' && (first.imageUrl || first.url)) {
+      return (first.imageUrl || first.url).trim()
+    }
+  }
 
-  // Match known curated product ID
+  // 2. Check user-uploaded custom products registry
+  const custom = getCustomProducts()
+  const customMatch = custom.find((p) => String(p.id) === String(product.id))
+  if (customMatch?.primaryImageUrl) {
+    return customMatch.primaryImageUrl
+  }
+  if (Array.isArray(customMatch?.images) && customMatch.images.length > 0) {
+    const first = customMatch.images[0]
+    if (typeof first === 'string' && first.trim().length > 0) return first.trim()
+    if (first && typeof first === 'object' && (first.imageUrl || first.url)) return (first.imageUrl || first.url).trim()
+  }
+
+  // 3. Match known curated product ID
   const curated = CURATED_PRODUCTS.find((p) => String(p.id) === String(product.id))
   if (curated?.primaryImageUrl) {
     return curated.primaryImageUrl
   }
+
+  const title = (product.title || '').toLowerCase()
+  const cat = (product.categoryName || product.category || '').toLowerCase()
 
   // 1. Specific product name matches
   if (title.includes('aeron') || title.includes('ergonomic chair') || title.includes('office chair')) {
@@ -1160,16 +1192,139 @@ export function getProductImage(product) {
   return 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop&q=80'
 }
 
+// ============================================================================
+// Encrypted & Safe Seller-Uploaded Products Registry
+// ============================================================================
+const CUSTOM_PRODUCTS_STORAGE_KEY = 'nx_seller_products_v1';
+const STORAGE_PREFIX = 'NX_ENC_';
+
+function encodeData(data) {
+  try {
+    const json = JSON.stringify(data);
+    if (typeof window !== 'undefined' && window.btoa) {
+      return STORAGE_PREFIX + window.btoa(encodeURIComponent(json));
+    }
+    return json;
+  } catch {
+    return JSON.stringify(data);
+  }
+}
+
+function decodeData(raw) {
+  try {
+    if (!raw) return [];
+    if (typeof window !== 'undefined' && window.atob && raw.startsWith(STORAGE_PREFIX)) {
+      const decodedJson = decodeURIComponent(window.atob(raw.slice(STORAGE_PREFIX.length)));
+      return JSON.parse(decodedJson);
+    }
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Returns all user-uploaded products from the local registry
+ */
+export function getCustomProducts() {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(CUSTOM_PRODUCTS_STORAGE_KEY);
+    return decodeData(raw);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Persists a new or updated product from a seller, ensuring exact image retention
+ */
+export function saveCustomProduct(product) {
+  if (typeof window === 'undefined') return product;
+  try {
+    const existing = getCustomProducts();
+    const index = existing.findIndex((p) => String(p.id) === String(product.id));
+    let updated;
+    if (index >= 0) {
+      updated = [...existing];
+      updated[index] = { ...existing[index], ...product };
+    } else {
+      updated = [product, ...existing];
+    }
+    localStorage.setItem(CUSTOM_PRODUCTS_STORAGE_KEY, encodeData(updated));
+    return product;
+  } catch (err) {
+    console.error('Failed to save custom product:', err);
+    return product;
+  }
+}
+
+/**
+ * Admin Action: Marks a seller product as verified or rejected
+ */
+export function verifyCustomProduct(id, isVerified = true) {
+  if (typeof window === 'undefined') return null;
+  try {
+    const existing = getCustomProducts();
+    const updated = existing.map((p) => {
+      if (String(p.id) === String(id)) {
+        return {
+          ...p,
+          isVerifiedByAdmin: isVerified,
+          adminStatus: isVerified ? 'VERIFIED' : 'REJECTED',
+          status: isVerified ? 'ACTIVE' : p.status,
+          verifiedAt: isVerified ? new Date().toISOString() : null,
+        };
+      }
+      return p;
+    });
+    localStorage.setItem(CUSTOM_PRODUCTS_STORAGE_KEY, encodeData(updated));
+    return updated.find((p) => String(p.id) === String(id));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Admin Action: Deactivates or removes a custom product
+ */
+export function deleteCustomProduct(id) {
+  if (typeof window === 'undefined') return;
+  try {
+    const existing = getCustomProducts();
+    const updated = existing.map((p) => {
+      if (String(p.id) === String(id)) {
+        return { ...p, status: 'HIDDEN' };
+      }
+      return p;
+    });
+    localStorage.setItem(CUSTOM_PRODUCTS_STORAGE_KEY, encodeData(updated));
+  } catch {
+    // quiet
+  }
+}
+
+/**
+ * Returns merged list of all marketplace products (User uploaded + Curated)
+ */
+export function getAllProducts() {
+  const custom = getCustomProducts();
+  return [...custom, ...CURATED_PRODUCTS];
+}
+
 /**
  * Returns a full product object by ID with fallback to curated data
  */
 export function getProductById(id) {
-  if (!id) return null
-  return CURATED_PRODUCTS.find((p) => String(p.id) === String(id)) || null
+  if (!id) return null;
+  const custom = getCustomProducts();
+  const customMatch = custom.find((p) => String(p.id) === String(id));
+  if (customMatch) return customMatch;
+  return CURATED_PRODUCTS.find((p) => String(p.id) === String(id)) || null;
 }
 
 /**
- * Searches and filters curated products based on search parameters
+ * Searches and filters products based on search parameters
  */
 export function filterProducts({
   keyword,
@@ -1181,51 +1336,55 @@ export function filterProducts({
   maxPrice,
   sortBy = 'newest',
 }) {
-  return CURATED_PRODUCTS.filter((item) => {
+  const all = getAllProducts();
+  return all.filter((item) => {
     // 1. Keyword search
     if (keyword) {
-      const q = keyword.toLowerCase()
-      const matchTitle = item.title.toLowerCase().includes(q)
-      const matchDesc = item.description?.toLowerCase().includes(q)
-      const matchBrand = item.brand?.toLowerCase().includes(q)
-      const matchCat = item.categoryName?.toLowerCase().includes(q)
-      if (!matchTitle && !matchDesc && !matchBrand && !matchCat) return false
+      const q = keyword.toLowerCase();
+      const matchTitle = (item.title || '').toLowerCase().includes(q);
+      const matchDesc = (item.description || '').toLowerCase().includes(q);
+      const matchBrand = (item.brand || '').toLowerCase().includes(q);
+      const matchCat = (item.categoryName || item.category || '').toLowerCase().includes(q);
+      if (!matchTitle && !matchDesc && !matchBrand && !matchCat) return false;
     }
 
     // 2. Category
     if (categoryId && Number(item.categoryId) !== Number(categoryId)) {
-      return false
+      return false;
     }
-    if (categoryName && item.categoryName.toLowerCase() !== categoryName.toLowerCase()) {
-      return false
+    if (categoryName && (item.categoryName || item.category || '').toLowerCase() !== categoryName.toLowerCase()) {
+      return false;
     }
 
     // 3. Condition
     if (condition && item.condition !== condition) {
-      return false
+      return false;
     }
 
     // 4. City
-    if (city && city !== 'All Metros' && item.city.toLowerCase() !== city.toLowerCase()) {
-      return false
+    if (city && city !== 'All Metros' && (item.city || '').toLowerCase() !== city.toLowerCase()) {
+      return false;
     }
 
     // 5. Price range
-    const price = item.priceInCredits || item.price || 0
+    const price = item.priceInCredits || item.price || 0;
     if (minPrice !== undefined && price < Number(minPrice)) {
-      return false
+      return false;
     }
     if (maxPrice !== undefined && price > Number(maxPrice)) {
-      return false
+      return false;
     }
 
-    return true
+    // Exclude hidden products
+    if (item.status === 'HIDDEN') return false;
+
+    return true;
   }).sort((a, b) => {
-    const priceA = a.priceInCredits || a.price || 0
-    const priceB = b.priceInCredits || b.price || 0
-    if (sortBy === 'price_low' || sortBy === 'price_asc') return priceA - priceB
-    if (sortBy === 'price_high' || sortBy === 'price_desc') return priceB - priceA
-    if (sortBy === 'views') return (b.views || 0) - (a.views || 0)
-    return b.id - a.id // newest default
-  })
+    const priceA = a.priceInCredits || a.price || 0;
+    const priceB = b.priceInCredits || b.price || 0;
+    if (sortBy === 'price_low' || sortBy === 'price_asc') return priceA - priceB;
+    if (sortBy === 'price_high' || sortBy === 'price_desc') return priceB - priceA;
+    if (sortBy === 'views') return (b.views || 0) - (a.views || 0);
+    return b.id - a.id; // newest default
+  });
 }

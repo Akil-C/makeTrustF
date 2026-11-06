@@ -13,7 +13,7 @@ import {
 } from 'lucide-react'
 import productService from '../../services/productService'
 import { formatCredits, formatDate } from '../../utils/formatters'
-import { getProductImage } from '../../utils/productsData'
+import { getProductImage, getCustomProducts } from '../../utils/productsData'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import toast from 'react-hot-toast'
@@ -29,12 +29,22 @@ export default function SellerProducts() {
     async function loadProducts() {
       setLoading(true)
       try {
-        const res = await productService.getSellerProducts({ page: 0, size: 50 })
-        if (res.data?.content) {
-          setProducts(res.data.content)
+        let apiList = []
+        try {
+          const res = await productService.getSellerProducts({ page: 0, size: 50 })
+          if (res.data?.content) apiList = res.data.content
+        } catch {
+          apiList = []
         }
-      } catch {
-        // Fallback
+
+        const custom = getCustomProducts()
+        const merged = [...custom]
+        apiList.forEach((p) => {
+          if (!merged.some((m) => String(m.id) === String(p.id))) {
+            merged.push(p)
+          }
+        })
+        setProducts(merged)
       } finally {
         setLoading(false)
       }

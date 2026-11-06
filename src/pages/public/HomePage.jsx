@@ -33,7 +33,7 @@ import VerifiedBadge from '../../components/common/VerifiedBadge'
 import SellerLevelBadge from '../../components/common/SellerLevelBadge'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
-import { CURATED_PRODUCTS, getProductImage } from '../../utils/productsData'
+import { CURATED_PRODUCTS, getProductImage, getAllProducts, getCustomProducts } from '../../utils/productsData'
 import toast from 'react-hot-toast'
 
 // Curated verified marketplace items showcasing rich multi-category catalog
@@ -62,10 +62,12 @@ export default function HomePage() {
   const searchSuggestions = useMemo(() => {
     if (!searchQuery.trim() || searchQuery.trim().length < 2) return []
     const term = searchQuery.toLowerCase()
-    return CURATED_PRODUCTS.filter((p) =>
-      p.title.toLowerCase().includes(term) ||
-      (p.categoryName && p.categoryName.toLowerCase().includes(term)) ||
-      (p.brand && p.brand.toLowerCase().includes(term))
+    return getAllProducts().filter((p) =>
+      p.status !== 'HIDDEN' && (
+        p.title.toLowerCase().includes(term) ||
+        (p.categoryName && p.categoryName.toLowerCase().includes(term)) ||
+        (p.brand && p.brand.toLowerCase().includes(term))
+      )
     ).slice(0, 4)
   }, [searchQuery])
 

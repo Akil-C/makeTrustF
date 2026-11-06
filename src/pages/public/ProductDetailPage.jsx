@@ -86,21 +86,37 @@ export default function ProductDetailPage() {
     async function loadProduct() {
       setLoading(true)
       try {
-        const res = await productService.getProductById(id)
-        if (res.data) {
-          const apiProduct = res.data
-          const resolvedImg = getProductImage(apiProduct)
-          const curatedFallback = getProductById(id)
+        let apiProduct = null
+        try {
+          const res = await productService.getProductById(id)
+          if (res.data) apiProduct = res.data
+        } catch {
+          // non-blocking
+        }
+
+        const localProduct = getProductById(id)
+        const target = localProduct || apiProduct
+
+        if (target) {
+          const resolvedImg = getProductImage(target)
+          const rawImages = (target.images && target.images.length > 0)
+            ? target.images
+            : (apiProduct?.images?.length ? apiProduct.images : [resolvedImg])
+
+          const formattedImages = rawImages.map((im) =>
+            typeof im === 'string' ? im : im.imageUrl || im.url || resolvedImg
+          )
+
           setProduct({
             ...apiProduct,
+            ...localProduct,
+            ...target,
             primaryImageUrl: resolvedImg,
-            images: apiProduct.images?.length
-              ? apiProduct.images.map((im) => (typeof im === 'string' ? im : im.url || resolvedImg))
-              : (curatedFallback?.images || [resolvedImg]),
-            description: apiProduct.description || curatedFallback?.description || '',
+            images: formattedImages,
+            description: target.description || '',
           })
         } else {
-          setProduct(getProductById(id) || MOCK_PRODUCT)
+          setProduct(MOCK_PRODUCT)
         }
       } catch {
         setProduct(getProductById(id) || MOCK_PRODUCT)
@@ -368,6 +384,17 @@ export default function ProductDetailPage() {
                   <ShieldCheck className="w-4 h-4 text-emerald-600" />
                   <span>Escrow Protected Purchase</span>
                 </span>
+                {product.isVerifiedByAdmin || product.adminStatus === 'VERIFIED' ? (
+                  <span className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1 flex items-center gap-1.5 shadow-xs">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span>Admin Verified</span>
+                  </span>
+                ) : (
+                  <span className="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 rounded-full px-3 py-1 flex items-center gap-1.5 shadow-xs">
+                    <Clock className="w-4 h-4 text-amber-600" />
+                    <span>Pending Admin Verification</span>
+                  </span>
+                )}
               </div>
 
               {/* Key Spec Badges */}
