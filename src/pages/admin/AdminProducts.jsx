@@ -16,7 +16,7 @@ import { formatCredits } from '../../utils/formatters'
 import { getProductImage, getCustomProducts, verifyCustomProduct, deleteCustomProduct } from '../../utils/productsData'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
-import toast from 'react-hot-toast'
+import customToast, { toast } from '../../utils/customToast'
 
 export default function AdminProducts() {
   const [products, setProducts] = useState([])
@@ -51,7 +51,7 @@ export default function AdminProducts() {
 
   const handleVerify = (id, title) => {
     verifyCustomProduct(id, true)
-    toast.success(`"${title}" verified & approved for marketplace catalog!`)
+    customToast.success('Listing Approved', `"${title}" is verified and active on the marketplace catalog!`)
     setProducts((prev) =>
       prev.map((p) =>
         p.id === id
@@ -73,10 +73,10 @@ export default function AdminProducts() {
     try {
       try { await adminService.removeProduct(id, 'Moderator policy enforcement') } catch {} 
       deleteCustomProduct(id)
-      toast.success('Listing deactivated from catalog')
+      customToast.info('Listing Removed', `"${title}" was removed from the active marketplace catalog.`)
       setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, status: 'HIDDEN' } : p)))
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to remove product')
+      customToast.error('Action Failed', err.response?.data?.message || 'Failed to remove product')
     }
   }
 

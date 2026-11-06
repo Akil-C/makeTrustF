@@ -6,7 +6,7 @@ import { prewarmServer } from '../../services/api'
 import Navbar from '../../components/common/Navbar'
 import Footer from '../../components/common/Footer'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
-import toast from 'react-hot-toast'
+import customToast, { toast } from '../../utils/customToast'
 
 const DEMO_ACCOUNTS = [
   {
@@ -85,11 +85,18 @@ export default function LoginPage() {
 
     try {
       const user = await login(targetEmail, targetPassword, 'simulated-turnstile-token')
-      const userName = user?.name || user?.displayName || user?.email || 'User'
-      toast.success(`Welcome back, ${userName}!`, { duration: 3500 })
+      const userName = user?.name || user?.displayName || user?.email?.split('@')[0] || 'Trader'
+      const userRole = user?.role || (Array.isArray(user?.roles) ? user.roles[0] : roleName || 'BUYER')
+
+      // Display high-end theme-matched welcome card
+      customToast.welcome({
+        name: userName,
+        role: userRole,
+        email: user?.email || targetEmail,
+        avatarUrl: user?.avatarUrl,
+      })
 
       setTimeout(() => {
-        const userRole = user?.role || (Array.isArray(user?.roles) ? user.roles[0] : '')
         if (userRole === 'ADMIN' || userRole?.includes('ADMIN')) {
           navigate('/admin/dashboard')
         } else if (userRole === 'SELLER' || userRole?.includes('SELLER')) {
@@ -104,7 +111,7 @@ export default function LoginPage() {
         err.message ||
         'Invalid email or password. Please verify your credentials.'
       setError(apiError)
-      toast.error(apiError)
+      customToast.error('Authentication Failed', apiError)
     } finally {
       if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current)
       if (elapsedIntervalRef.current) clearInterval(elapsedIntervalRef.current)

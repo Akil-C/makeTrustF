@@ -1,4 +1,5 @@
 import axios from 'axios'
+import customToast from '../utils/customToast'
 
 let rawUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 let API_URL = rawUrl.replace(/\/+$/, '')
@@ -189,7 +190,13 @@ api.interceptors.response.use(
 
     // 403 – forbidden, redirect to home
     if (error.response?.status === 403) {
+      customToast.error('Access Restricted', 'You do not have permission to access that resource.')
       window.location.href = '/'
+    }
+
+    // 429 – Rate limit
+    if (error.response?.status === 429) {
+      customToast.warning('Rate Limit Exceeded', 'You are sending requests too rapidly. Please pause for a moment.')
     }
 
     if (error.code === 'ECONNABORTED' || (error.message && error.message.toLowerCase().includes('timeout'))) {
@@ -204,7 +211,10 @@ function redirectToLogin() {
   localStorage.removeItem('accessToken')
   localStorage.removeItem('refreshToken')
   if (!window.location.pathname.includes('/login')) {
-    window.location.href = '/login'
+    customToast.error('Session Expired', 'Your authentication session has expired. Please sign in again.')
+    setTimeout(() => {
+      window.location.href = '/login'
+    }, 350)
   }
 }
 

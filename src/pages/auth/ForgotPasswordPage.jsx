@@ -5,7 +5,7 @@ import authService from '../../services/authService'
 import Navbar from '../../components/common/Navbar'
 import Footer from '../../components/common/Footer'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
-import toast from 'react-hot-toast'
+import customToast, { toast } from '../../utils/customToast'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -26,11 +26,11 @@ export default function ForgotPasswordPage() {
     try {
       await authService.forgotPassword(email)
       setSubmitted(true)
-      toast.success('Password reset instructions sent to your email!')
+      customToast.success('Reset Instructions Dispatched', 'Password reset instructions sent to your email!')
     } catch {
       // In development / demo mode, display success
       setSubmitted(true)
-      toast.success('Password reset instructions sent to your email!')
+      customToast.success('Reset Instructions Dispatched', 'Password reset instructions sent to your email!')
     } finally {
       setLoading(false)
     }

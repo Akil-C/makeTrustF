@@ -17,7 +17,7 @@ import aiService from '../../services/aiService'
 import { PRODUCT_CATEGORIES, PRODUCT_CONDITIONS } from '../../utils/constants'
 import Modal from '../../components/common/Modal'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
-import toast from 'react-hot-toast'
+import customToast, { toast } from '../../utils/customToast'
 
 const CITY_COORDINATES = {
   Bengaluru: { lat: 12.9716, lng: 77.5946, state: 'Karnataka' },
@@ -232,11 +232,15 @@ export default function CreateProduct() {
       }
 
       saveCustomProduct(customProductObj)
-      toast.success('Listing published! Displaying to users (Pending Admin Verification)', { duration: 4000 })
+      customToast.success(
+        'Listing Published',
+        'Your listing is now visible to all marketplace users and queued for admin verification.',
+        { duration: 4500 }
+      )
       navigate('/seller/products')
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Failed to publish listing.'
-      toast.error(msg)
+      customToast.error('Listing Publish Failed', msg)
     } finally {
       setSubmitting(false)
     }

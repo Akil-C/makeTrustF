@@ -22,7 +22,7 @@ import { formatCredits } from '../../utils/formatters'
 import { getProductImage, getProductById } from '../../utils/productsData'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
-import toast from 'react-hot-toast'
+import customToast, { toast } from '../../utils/customToast'
 
 const MOCK_CHECKOUT_PRODUCT = {
   id: 1,
@@ -95,10 +95,10 @@ export default function CheckoutPage() {
     try {
       if (topUpDemo) {
         await topUpDemo(needed)
-        toast.success(`Claimed +${needed.toLocaleString()} MC demo credits!`)
+        customToast.success('Demo Credits Granted', `Claimed +${needed.toLocaleString()} MC to cover escrow purchase!`)
       }
     } catch {
-      toast.error('Could not claim demo credits.')
+      customToast.error('Refill Interrupted', 'Could not claim demo credits at this time.')
     } finally {
       setRefilling(false)
     }
@@ -108,12 +108,12 @@ export default function CheckoutPage() {
     e.preventDefault()
 
     if (!shippingAddress.street.trim() || !shippingAddress.city.trim()) {
-      toast.error('Please enter a valid street address and city.')
+      customToast.error('Shipping Address Required', 'Please enter a valid street address and destination city.')
       return
     }
 
     if (!hasSufficientBalance) {
-      toast.error('Insufficient wallet balance to cover total MC cost.')
+      customToast.error('Insufficient Credits', 'Wallet balance insufficient to cover total escrow cost.')
       return
     }
 
@@ -133,11 +133,14 @@ export default function CheckoutPage() {
       })
 
       if (refreshWallet) await refreshWallet()
-      toast.success('Escrow purchase authorized! Funds safely locked.')
+      customToast.escrow(
+        'Escrow Purchase Authorized',
+        'Funds safely locked in escrow vault until you inspect and confirm receipt.'
+      )
       navigate('/buyer/orders')
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Unable to place order'
-      toast.error(msg)
+      customToast.error('Order Placement Failed', msg)
     } finally {
       setSubmitting(false)
     }

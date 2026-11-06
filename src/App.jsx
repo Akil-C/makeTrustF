@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { prewarmServer } from './services/api'
+import customToast from './utils/customToast'
 import ProtectedRoute from './components/common/ProtectedRoute'
 import LoadingSpinner from './components/common/LoadingSpinner'
 
@@ -15,6 +16,7 @@ const SellerProfilePage  = lazy(() => import('./pages/public/SellerProfilePage')
 const SearchPage         = lazy(() => import('./pages/public/SearchPage'))
 const MapSearchPage      = lazy(() => import('./pages/public/MapSearchPage'))
 const LegalPolicyPage    = lazy(() => import('./pages/public/LegalPolicyPage'))
+const NotFoundPage       = lazy(() => import('./pages/public/NotFoundPage'))
 
 // ── Buyer Pages ───────────────────────────────────────────────────────────────
 const BuyerDashboard  = lazy(() => import('./pages/buyer/BuyerDashboard'))
@@ -69,6 +71,22 @@ export default function App() {
   useEffect(() => {
     // Proactively prewarm backend cloud instance upon initial site load
     prewarmServer()
+
+    // Global network connectivity detection with theme-matched notifications
+    const handleOnline = () => {
+      customToast.success('Connection Restored', 'Back online! Syncing marketplace state.')
+    }
+    const handleOffline = () => {
+      customToast.error('Network Offline', 'Internet connection lost. Nexora is attempting to reconnect.')
+    }
+
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
   }, [])
 
   return (
@@ -129,8 +147,9 @@ export default function App() {
               <Route path="/admin/settings"    element={<AdminSettings />} />
             </Route>
 
-            {/* ── Fallback ───────────────────────────────────────────────────── */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            {/* ── Fallback & 404 Route ───────────────────────────────────────── */}
+            <Route path="/404" element={<NotFoundPage />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </div>
       </Suspense>

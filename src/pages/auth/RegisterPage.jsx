@@ -6,7 +6,7 @@ import { prewarmServer } from '../../services/api'
 import Navbar from '../../components/common/Navbar'
 import Footer from '../../components/common/Footer'
 import DemoDisclaimer from '../../components/common/DemoDisclaimer'
-import toast from 'react-hot-toast'
+import customToast, { toast } from '../../utils/customToast'
 
 export default function RegisterPage() {
   const [name, setName] = useState('')
@@ -63,13 +63,17 @@ export default function RegisterPage() {
 
     try {
       await register({ name: name.trim(), email: email.trim(), password, role, captchaToken: 'simulated-turnstile-token' })
-      toast.success('Registration successful! Welcome to Nexora.')
+      customToast.welcome({
+        name: name.trim(),
+        role,
+        email: email.trim(),
+      })
       if (role === 'SELLER') navigate('/seller/dashboard')
       else navigate('/buyer/dashboard')
     } catch (err) {
       const apiError = err.response?.data?.message || err.message || 'Registration failed. Please check your information.'
       setError(apiError)
-      toast.error(apiError)
+      customToast.error('Registration Failed', apiError)
     } finally {
       if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current)
       if (elapsedIntervalRef.current) clearInterval(elapsedIntervalRef.current)

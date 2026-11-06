@@ -319,8 +319,12 @@ export default function Navbar() {
 
                   <div className="divide-y divide-slate-100 max-h-80 overflow-y-auto">
                     {notifications.length === 0 ? (
-                      <div className="p-8 text-center text-slate-400 text-xs">
-                        No new notifications at this time.
+                      <div className="py-8 px-4 text-center space-y-2">
+                        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+                          <Bell className="w-5 h-5" />
+                        </div>
+                        <p className="font-bold text-xs text-slate-800">All caught up</p>
+                        <p className="text-[11px] text-slate-500 max-w-xs mx-auto">No pending alerts, order updates, or escrow dispatches.</p>
                       </div>
                     ) : (
                       notifications.map((n) => (
