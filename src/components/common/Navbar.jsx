@@ -10,11 +10,7 @@ import {
   Coins,
   PlusCircle,
   Bell,
-  Check,
   CheckCheck,
-  Package,
-  ShieldCheck,
-  AlertCircle,
 } from 'lucide-react'
 import { formatCredits } from '../../utils/formatters'
 import notificationService from '../../services/notificationService'
@@ -30,6 +26,12 @@ export default function Navbar() {
   const { user, isAuthenticated, logout, walletBalance, hasRole } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+
+  // Close mobile drawer upon route change
+  useEffect(() => {
+    setMobileMenuOpen(false)
+    setNotifOpen(false)
+  }, [location.pathname])
 
   const handleLogout = () => {
     logout()
@@ -102,25 +104,25 @@ export default function Navbar() {
   }
 
   const navLinkClass = (path) =>
-    `px-2.5 py-1.5 rounded-lg text-xs xl:text-sm font-medium tracking-normal transition-all ${
+    `h-8 px-2.5 rounded-lg text-xs font-semibold tracking-tight transition-all flex items-center justify-center shrink-0 ${
       isActive(path)
         ? 'text-slate-950 bg-slate-900/10 font-bold'
         : 'text-slate-600 hover:text-slate-950 hover:bg-slate-900/5'
     }`
 
   return (
-    <header className="sticky top-0 z-50 bg-[#F1F1ED]/95 backdrop-blur-md border-b border-slate-200/90 shadow-xs transition-colors duration-200 font-sans">
-      {/* Primary Top Bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3 lg:gap-6">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-xs transition-colors duration-200 font-sans">
+      {/* Primary Top Bar - Exact max-w-7xl alignment with page content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4 lg:gap-6">
         
         {/* Left: Brand Logo & Role Badge */}
         <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
           <Link
             to="/"
-            className="flex items-center gap-2 group transition-all"
+            className="flex items-center gap-2.5 group transition-all"
             aria-label="Nexora Homepage"
           >
-            <div className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center font-black text-sm tracking-tighter shadow-xs group-hover:bg-rose-600 transition-colors">
+            <div className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center font-black text-sm tracking-tighter shadow-xs group-hover:bg-rose-600 transition-colors shrink-0">
               N
             </div>
             <span className="font-sans font-black text-xl sm:text-2xl tracking-tight text-slate-900 group-hover:text-rose-600 transition-colors">
@@ -153,8 +155,8 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Center: Contextual Role Navigation Links (Desktop) */}
-        <nav className="hidden lg:flex items-center gap-1 xl:gap-2 flex-1 justify-center max-w-2xl">
+        {/* Center: Contextual Role Navigation Links (Desktop: lg screens and up) */}
+        <nav className="hidden lg:flex items-center gap-1 xl:gap-1.5 flex-1 justify-center max-w-3xl overflow-hidden">
           {isAuthenticated ? (
             <>
               {isAdmin && (
@@ -191,11 +193,11 @@ export default function Navbar() {
                     Dashboard
                   </Link>
                   <Link to="/seller/products" className={navLinkClass('/seller/products')}>
-                    My Listings
+                    Listings
                   </Link>
                   <Link
                     to="/seller/products/create"
-                    className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-emerald-800 bg-emerald-100/70 hover:bg-emerald-200/80 transition-all flex items-center gap-1 shadow-xs"
+                    className="h-8 px-2.5 rounded-lg text-xs font-bold text-emerald-800 bg-emerald-100/80 hover:bg-emerald-200/90 transition-all flex items-center gap-1 shrink-0 shadow-xs"
                   >
                     <PlusCircle className="w-3.5 h-3.5" />
                     <span>Listing</span>
@@ -250,7 +252,7 @@ export default function Navbar() {
               </Link>
               <a
                 href="/#how-it-works"
-                className="px-3 py-1.5 rounded-lg text-xs xl:text-sm font-medium text-slate-600 hover:text-slate-950 hover:bg-slate-900/5 transition-all"
+                className="h-8 px-2.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-950 hover:bg-slate-900/5 transition-all flex items-center justify-center shrink-0"
               >
                 How It Works
               </a>
@@ -259,7 +261,7 @@ export default function Navbar() {
         </nav>
 
         {/* Right: Credits, Notifications, User Dashboard & Auth CTAs */}
-        <div className="hidden sm:flex items-center gap-2.5 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           {/* Universal Credits Pill: 100 Credits = ₹100 */}
           <Link
             to={
@@ -271,7 +273,7 @@ export default function Navbar() {
                   : '/buyer/dashboard'
                 : '/login'
             }
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100/90 text-amber-900 border border-amber-300/80 rounded-lg text-xs font-bold transition-all shadow-xs"
+            className="flex items-center gap-1.5 h-9 px-2.5 sm:px-3 bg-amber-50 hover:bg-amber-100/90 text-amber-900 border border-amber-300/80 rounded-lg text-xs font-bold transition-all shadow-xs"
             title={
               isAuthenticated
                 ? `Active Wallet Balance: ₹${(walletBalance || 0).toLocaleString('en-IN')} (${(walletBalance || 0).toLocaleString('en-IN')} Credits) — 100 Credits = ₹100`
@@ -282,18 +284,18 @@ export default function Navbar() {
             <span className="font-mono font-bold tracking-tight">
               {isAuthenticated ? `₹${(walletBalance || 0).toLocaleString('en-IN')}` : '₹0'}
             </span>
-            <span className="text-[10px] text-amber-700/80 font-mono font-normal">
+            <span className="hidden sm:inline text-[11px] text-amber-700/80 font-mono font-normal">
               ({isAuthenticated ? `${(walletBalance || 0).toLocaleString('en-IN')} Cr` : '0 Cr'})
             </span>
           </Link>
 
-          {/* Real-time Notification Popover Button */}
+          {/* Real-time Notification Popover Button (Authenticated) */}
           {isAuthenticated && (
             <div className="relative" ref={notifRef}>
               <button
                 type="button"
                 onClick={() => setNotifOpen(!notifOpen)}
-                className="relative p-2 rounded-lg border border-slate-300 bg-white hover:border-slate-800 text-slate-700 transition-colors shadow-xs"
+                className="relative h-9 w-9 flex items-center justify-center rounded-lg border border-slate-200 hover:border-slate-800 bg-white text-slate-700 transition-colors shadow-xs"
                 title="Notifications"
                 aria-label="View notifications"
               >
@@ -307,8 +309,8 @@ export default function Navbar() {
 
               {/* Popover Dropdown */}
               {notifOpen && (
-                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-150">
-                  <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <div className="absolute right-0 mt-2 w-80 sm:w-96 max-w-[calc(100vw-2rem)] bg-white rounded-xl border border-slate-200 shadow-xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="p-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
                     <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Notifications</span>
                     {unreadCount > 0 && (
                       <button
@@ -354,37 +356,37 @@ export default function Navbar() {
             </div>
           )}
 
+          {/* Desktop User Account Dashboard & Exit Actions */}
           {isAuthenticated ? (
-            <>
-              {/* User Dashboard Button */}
+            <div className="hidden lg:flex items-center gap-2">
               <Link
                 to={getDashboardRoute()}
-                className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:border-slate-800 text-slate-800 font-semibold transition-all flex items-center gap-1.5 text-xs shadow-xs"
+                className="h-9 px-3 rounded-lg border border-slate-200 hover:border-slate-800 bg-white text-slate-800 font-semibold transition-all flex items-center gap-1.5 text-xs shadow-xs"
                 title="Account Dashboard"
               >
                 <LayoutDashboard className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                <span className="truncate max-w-[100px]">
+                <span className="truncate max-w-[95px]">
                   {(user?.name || user?.displayName || user?.email || 'Account').split(' ')[0]}
                 </span>
               </Link>
 
-              {/* Exit / Sign Out Button */}
               <button
+                type="button"
                 onClick={handleLogout}
-                className="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 text-slate-600 font-medium transition-all flex items-center gap-1 text-xs shadow-xs"
+                className="h-9 px-2.5 rounded-lg border border-slate-200 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 text-slate-600 font-medium transition-all flex items-center gap-1 text-xs shadow-xs"
                 title="Sign Out"
               >
                 <LogOut className="w-3.5 h-3.5 shrink-0" />
                 <span>Exit</span>
               </button>
-            </>
+            </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="hidden lg:flex items-center gap-2">
               <Link
                 to="/login"
                 onMouseEnter={() => prewarmServer()}
                 onTouchStart={() => prewarmServer()}
-                className="text-xs font-semibold text-slate-700 hover:text-slate-950 px-3 py-1.5 rounded-lg hover:bg-slate-200/50 transition-colors"
+                className="h-9 text-xs font-semibold text-slate-700 hover:text-slate-950 px-3 rounded-lg hover:bg-slate-100 flex items-center justify-center transition-colors"
               >
                 Sign In
               </Link>
@@ -392,42 +394,27 @@ export default function Navbar() {
                 to="/register"
                 onMouseEnter={() => prewarmServer()}
                 onTouchStart={() => prewarmServer()}
-                className="text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white px-3.5 py-1.5 rounded-lg transition-colors shadow-xs"
+                className="h-9 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white px-3.5 rounded-lg flex items-center justify-center transition-colors shadow-xs"
               >
                 Create Account
               </Link>
             </div>
           )}
 
-          {/* Explore Market CTA Button */}
+          {/* Explore Market CTA Button (Large screens) */}
           <Link
             to="/search"
-            className="hidden xl:flex bg-slate-900 text-white hover:bg-rose-600 rounded-lg px-3.5 py-1.5 transition-all duration-200 items-center gap-1.5 text-xs font-semibold group shadow-xs"
+            className="hidden xl:flex h-9 bg-slate-900 text-white hover:bg-rose-600 rounded-lg px-3.5 transition-all duration-200 items-center gap-1.5 text-xs font-semibold group shadow-xs shrink-0"
           >
             <span>Explore</span>
             <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
           </Link>
-        </div>
 
-        {/* Mobile View: Credits + Hamburger */}
-        <div className="flex sm:hidden items-center gap-2">
-          {/* Mobile Credits pill: 100 Credits = ₹100 */}
-          <Link
-            to={isAuthenticated ? getDashboardRoute() : '/login'}
-            className="flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-900 border border-amber-300/80 rounded-md text-[11px] font-mono font-bold"
-            title={
-              isAuthenticated
-                ? `Active Wallet Balance: ₹${(walletBalance || 0).toLocaleString('en-IN')} (${(walletBalance || 0).toLocaleString('en-IN')} Credits)`
-                : 'Marketplace Wallet: 100 Credits = ₹100'
-            }
-          >
-            <Coins className="w-3 h-3 text-amber-600 shrink-0" />
-            <span>{isAuthenticated ? `₹${(walletBalance || 0).toLocaleString('en-IN')}` : '₹0'}</span>
-          </Link>
-
+          {/* Responsive Hamburger Toggle Button: Displays whenever desktop nav is hidden */}
           <button
+            type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-1.5 text-slate-800 hover:text-slate-950 hover:bg-slate-200/60 rounded-lg transition-colors focus:outline-none"
+            className="lg:hidden h-9 w-9 flex items-center justify-center text-slate-800 hover:text-slate-950 hover:bg-slate-100 rounded-lg border border-slate-200 transition-colors focus:outline-none shrink-0"
             aria-label="Toggle navigation menu"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -435,20 +422,25 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Drawer Navigation */}
+      {/* Mobile & Tablet Drawer Navigation */}
       {mobileMenuOpen && (
-        <div className="sm:hidden fixed inset-0 top-16 bg-[#F1F1ED] z-50 flex flex-col justify-between p-5 border-t border-slate-200/80 overflow-y-auto">
+        <div className="lg:hidden fixed inset-0 top-16 bg-white/98 backdrop-blur-xl z-50 flex flex-col justify-between p-5 border-t border-slate-200/90 shadow-xl overflow-y-auto">
           <div className="space-y-5">
             {/* User Session Bar in Drawer */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200/80">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200/90">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
                   {isAuthenticated ? `Signed in as ${user?.role || 'User'}` : 'Guest Menu'}
                 </span>
+                {isAuthenticated && (
+                  <span className="text-xs font-bold text-slate-800">
+                    ({(user?.name || user?.email || 'User').split(' ')[0]})
+                  </span>
+                )}
               </div>
-              <div className="flex items-center gap-1 text-xs font-mono font-bold text-amber-900 bg-amber-50 px-2.5 py-1 rounded border border-amber-300/70">
+              <div className="flex items-center gap-1 text-xs font-mono font-bold text-amber-900 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-300/70">
                 <Coins className="w-3.5 h-3.5 text-amber-600" />
-                <span>{isAuthenticated ? `₹${(walletBalance || 0).toLocaleString('en-IN')} (${(walletBalance || 0).toLocaleString('en-IN')} Cr)` : '₹0'}</span>
+                <span>{isAuthenticated ? `₹${(walletBalance || 0).toLocaleString('en-IN')}` : '₹0'}</span>
               </div>
             </div>
 
@@ -458,78 +450,78 @@ export default function Navbar() {
                 <>
                   {isAdmin && (
                     <>
-                      <Link to="/admin/dashboard" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-200/50 flex items-center justify-between">
+                      <Link to="/admin/dashboard" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-100 flex items-center justify-between">
                         <span>Admin Dashboard</span>
                         <ArrowUpRight className="w-4 h-4 text-slate-400" />
                       </Link>
-                      <Link to="/admin/users" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-200/50">
+                      <Link to="/admin/users" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-100">
                         User Management
                       </Link>
-                      <Link to="/admin/sellers" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-200/50">
+                      <Link to="/admin/sellers" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-100">
                         Seller Registry
                       </Link>
-                      <Link to="/admin/kyc" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-200/50">
+                      <Link to="/admin/kyc" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-100">
                         KYC Queue
                       </Link>
-                      <Link to="/admin/products" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-200/50">
+                      <Link to="/admin/products" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-100">
                         Product Moderation
                       </Link>
-                      <Link to="/admin/orders" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-200/50">
+                      <Link to="/admin/orders" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-100">
                         Order Registry
                       </Link>
-                      <Link to="/admin/disputes" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-200/50">
+                      <Link to="/admin/disputes" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-100">
                         Disputes Arbitration
                       </Link>
-                      <Link to="/admin/credits" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-200/50">
+                      <Link to="/admin/credits" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-100">
                         Credits & Economy
                       </Link>
                     </>
                   )}
                   {isSeller && (
                     <>
-                      <Link to="/seller/dashboard" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-200/50 flex items-center justify-between">
+                      <Link to="/seller/dashboard" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-100 flex items-center justify-between">
                         <span>Seller Dashboard</span>
                         <ArrowUpRight className="w-4 h-4 text-slate-400" />
                       </Link>
-                      <Link to="/seller/products" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-200/50">
+                      <Link to="/seller/products" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-100">
                         My Listings
                       </Link>
-                      <Link to="/seller/products/create" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-emerald-700 font-bold bg-emerald-50 border border-emerald-200/60 flex items-center gap-1.5">
+                      <Link to="/seller/products/create" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 flex items-center gap-1.5">
                         <PlusCircle className="w-4 h-4" /> Add New Listing
                       </Link>
-                      <Link to="/seller/orders" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-200/50">
+                      <Link to="/seller/orders" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-100">
                         Orders Management
                       </Link>
-                      <Link to="/seller/kyc" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-200/50">
+                      <Link to="/seller/kyc" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-100">
                         KYC Verification
                       </Link>
-                      <Link to="/seller/chat" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-200/50">
+                      <Link to="/seller/chat" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-100">
                         Messages & Dialogues
                       </Link>
-                      <Link to="/seller/ai-insights" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-200/50">
+                      <Link to="/seller/ai-insights" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-100">
                         AI Seller Assistant
                       </Link>
-                      <Link to="/seller/analytics" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-200/50">
+                      <Link to="/seller/analytics" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-100">
                         Store Analytics
                       </Link>
                     </>
                   )}
                   {isBuyer && (
                     <>
-                      <Link to="/buyer/dashboard" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-200/50 flex items-center justify-between">
+                      <Link to="/buyer/dashboard" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-100 flex items-center justify-between">
                         <span>Buyer Dashboard</span>
                         <ArrowUpRight className="w-4 h-4 text-slate-400" />
                       </Link>
-                      <Link to="/buyer/orders" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-200/50">
+                      <Link to="/buyer/orders" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-100">
                         My Orders
                       </Link>
-                      <Link to="/buyer/wishlist" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-200/50">
+                      <Link to="/buyer/wishlist" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-100">
                         Saved Wishlist
                       </Link>
-                      <Link to="/buyer/chat" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-200/50">
+                      <Link to="/buyer/chat" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-100">
                         Messages & Inquiries
                       </Link>
-                      <Link to="/search" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-200/50">
+                      <Link to="/search" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-100">
                         Browse Marketplace
                       </Link>
                     </>
@@ -537,17 +529,17 @@ export default function Navbar() {
                 </>
               ) : (
                 <>
-                  <Link to="/search" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-200/50 flex items-center justify-between">
+                  <Link to="/search" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-100 flex items-center justify-between">
                     <span>Discover Products</span>
                     <ArrowUpRight className="w-4 h-4 text-slate-400" />
                   </Link>
-                  <Link to="/search?compare=true" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-200/50">
+                  <Link to="/search?compare=true" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-100">
                     Compare Offers
                   </Link>
-                  <Link to="/search?type=sellers" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-200/50">
+                  <Link to="/search?type=sellers" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-100">
                     Verified Sellers
                   </Link>
-                  <a href="/#how-it-works" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-200/50">
+                  <a href="/#how-it-works" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-3 rounded-lg text-slate-800 hover:bg-slate-100">
                     How Nexora Works
                   </a>
                 </>
@@ -556,19 +548,20 @@ export default function Navbar() {
           </div>
 
           {/* Bottom Drawer CTAs */}
-          <div className="space-y-3 pt-6 border-t border-slate-200/80">
+          <div className="space-y-3 pt-6 border-t border-slate-200/90">
             {isAuthenticated ? (
               <div className="space-y-2">
                 <Link
                   to={getDashboardRoute()}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full bg-slate-900 text-white font-bold text-center py-3 rounded-lg block text-sm shadow-xs"
+                  className="w-full h-11 bg-slate-900 text-white font-bold rounded-lg flex items-center justify-center text-sm shadow-xs hover:bg-slate-800 transition-colors"
                 >
                   Go to Dashboard
                 </Link>
                 <button
+                  type="button"
                   onClick={handleLogout}
-                  className="w-full border border-slate-300 hover:border-rose-400 hover:bg-rose-50 hover:text-rose-600 text-slate-700 font-medium text-center py-3 rounded-lg block text-sm transition-colors shadow-xs"
+                  className="w-full h-11 border border-slate-300 hover:border-rose-400 hover:bg-rose-50 hover:text-rose-600 text-slate-700 font-medium rounded-lg flex items-center justify-center text-sm transition-colors shadow-xs"
                 >
                   Sign Out (Exit)
                 </button>
@@ -580,7 +573,7 @@ export default function Navbar() {
                   onMouseEnter={() => prewarmServer()}
                   onTouchStart={() => prewarmServer()}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="border border-slate-300 text-slate-800 hover:bg-slate-200/50 font-semibold text-center py-3 rounded-lg block text-sm shadow-xs"
+                  className="h-11 border border-slate-300 text-slate-800 hover:bg-slate-100 font-semibold rounded-lg flex items-center justify-center text-sm shadow-xs transition-colors"
                 >
                   Sign In
                 </Link>
@@ -589,7 +582,7 @@ export default function Navbar() {
                   onMouseEnter={() => prewarmServer()}
                   onTouchStart={() => prewarmServer()}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="bg-rose-600 hover:bg-rose-700 text-white font-semibold text-center py-3 rounded-lg block text-sm shadow-xs"
+                  className="h-11 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-lg flex items-center justify-center text-sm shadow-xs transition-colors"
                 >
                   Create Account
                 </Link>
