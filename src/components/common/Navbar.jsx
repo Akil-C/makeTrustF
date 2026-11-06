@@ -104,7 +104,7 @@ export default function Navbar() {
   }
 
   const navLinkClass = (path) =>
-    `h-8 px-2.5 rounded-lg text-xs font-semibold tracking-tight transition-all flex items-center justify-center shrink-0 ${
+    `h-8 px-2 xl:px-2.5 rounded-lg text-xs font-semibold tracking-tight transition-all flex items-center justify-center whitespace-nowrap shrink-0 ${
       isActive(path)
         ? 'text-slate-950 bg-slate-900/10 font-bold'
         : 'text-slate-600 hover:text-slate-950 hover:bg-slate-900/5'
@@ -156,7 +156,7 @@ export default function Navbar() {
         </div>
 
         {/* Center: Contextual Role Navigation Links (Desktop: lg screens and up) */}
-        <nav className="hidden lg:flex items-center gap-1 xl:gap-1.5 flex-1 justify-center max-w-3xl overflow-hidden">
+        <nav className="hidden lg:flex items-center gap-1 xl:gap-2 flex-1 justify-center min-w-0 px-2">
           {isAuthenticated ? (
             <>
               {isAdmin && (
@@ -194,13 +194,6 @@ export default function Navbar() {
                   </Link>
                   <Link to="/seller/products" className={navLinkClass('/seller/products')}>
                     Listings
-                  </Link>
-                  <Link
-                    to="/seller/products/create"
-                    className="h-8 px-2.5 rounded-lg text-xs font-bold text-emerald-800 bg-emerald-100/80 hover:bg-emerald-200/90 transition-all flex items-center gap-1 shrink-0 shadow-xs"
-                  >
-                    <PlusCircle className="w-3.5 h-3.5" />
-                    <span>Listing</span>
                   </Link>
                   <Link to="/seller/orders" className={navLinkClass('/seller/orders')}>
                     Orders

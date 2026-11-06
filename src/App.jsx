@@ -14,6 +14,7 @@ const ProductDetailPage  = lazy(() => import('./pages/public/ProductDetailPage')
 const SellerProfilePage  = lazy(() => import('./pages/public/SellerProfilePage'))
 const SearchPage         = lazy(() => import('./pages/public/SearchPage'))
 const MapSearchPage      = lazy(() => import('./pages/public/MapSearchPage'))
+const LegalPolicyPage    = lazy(() => import('./pages/public/LegalPolicyPage'))
 
 // ── Buyer Pages ───────────────────────────────────────────────────────────────
 const BuyerDashboard  = lazy(() => import('./pages/buyer/BuyerDashboard'))
@@ -85,6 +86,9 @@ export default function App() {
             <Route path="/sellers/:id"       element={<SellerProfilePage />} />
             <Route path="/search"            element={<SearchPage />} />
             <Route path="/map-search"        element={<MapSearchPage />} />
+            <Route path="/terms"             element={<LegalPolicyPage />} />
+            <Route path="/privacy"           element={<LegalPolicyPage />} />
+            <Route path="/escrow-guarantee"  element={<LegalPolicyPage />} />
 
             {/* ── Buyer ──────────────────────────────────────────────────────── */}
             <Route element={<ProtectedRoute roles={['BUYER', 'SELLER', 'ADMIN']} />}>
